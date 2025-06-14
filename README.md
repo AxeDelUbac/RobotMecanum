@@ -15,3 +15,21 @@ This directory contains the logic for controlling the robot's motors, including:
 - **MotionManager**: This class acts as the main interface for receiving and processing movement commands (for example, from a serial interface). It interprets the commands and calls the appropriate methods of `movementController` to execute the desired movement.
 
 This module abstracts the robot's movement and motor control logic.
+
+## `speedMesurement` directory
+
+This directory contains the logic for measuring and managing the speed of the robot's motors, including:
+
+| Class/Module Name      | Description                                                                                                   | Uses                        |
+|-----------------------|---------------------------------------------------------------------------------------------------------------|-----------------------------|
+| **rotaryEncoder**     | Handles the reading and processing of rotary encoder signals to determine wheel rotation and speed.            | -                           |
+| **hallSensor**        | Manages the acquisition of speed data using Hall effect sensors.                                               | -                           |
+| **globalSpeed**       | Aggregates speed data from all sensors and provides global speed information for the robot.                    | **rotaryEncoder**, **hallSensor** |
+| **encoderParameter**  | Defines parameters and configuration for encoders (constants, calibration, etc.).                             | -                           |
+
+- **rotaryEncoder**: This module/class is responsible for interfacing with rotary encoders attached to the robot's wheels. It processes encoder pulses to calculate rotation and speed.
+- **hallSensor**: This module/class manages Hall effect sensors, which are used as an alternative method for measuring wheel speed.
+- **globalSpeed**: This class aggregates speed measurements from all available sensors (rotary encoders and Hall sensors) to provide a unified speed value for the robot. It may also handle filtering and averaging.
+- **encoderParameter**: This header defines configuration parameters, constants, and calibration values for the encoders, ensuring accurate speed measurement.
+
+This module abstracts the speed measurement and sensor fusion logic for the robot's movement system.
