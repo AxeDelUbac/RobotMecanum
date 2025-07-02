@@ -1,5 +1,5 @@
 #ifndef ENCODERPARAMETER_H
-#define CONFIG_ENCODERPARAMETER_H
+#define ENCODERPARAMETER_H
 
 // Définition des constantes globales
 const int pulsesPerRotation = 11;

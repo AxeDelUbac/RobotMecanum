@@ -1,8 +1,10 @@
 #ifndef DIRECTIONCONTROLLER_H
 #define DIRECTIONCONTROLLER_H
 
+#include <Arduino.h>
+#include "GPIO.h"
+
 #include "motorGearBox.h"
-#include "main.h"
 
 class movementController {
     public:
@@ -29,10 +31,10 @@ class movementController {
 
     private:
 
-        motorGearBox rightBackMotor;
-        motorGearBox leftBackMotor;
-        motorGearBox rightFrontMotor;
-        motorGearBox leftFrontMotor;
+        motorGearBox orightBackMotor;
+        motorGearBox oleftBackMotor;
+        motorGearBox orightFrontMotor;
+        motorGearBox oleftFrontMotor;
 
 };
 

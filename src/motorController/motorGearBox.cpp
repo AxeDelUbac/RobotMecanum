@@ -1,5 +1,4 @@
 #include "motorGearBox.h"
-#include <Arduino.h>
 
 motorGearBox::motorGearBox(int highPin, int lowPin, int pwmPin){
     this->highPin = highPin;

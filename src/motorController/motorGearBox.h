@@ -1,6 +1,8 @@
 #ifndef MOTORGEARBOX_H
 #define MOTORGEARBOX_H
 
+#include <Arduino.h>
+
 class motorGearBox {
     public:
 

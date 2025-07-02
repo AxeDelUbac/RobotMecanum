@@ -1,29 +1,37 @@
 #include "globalSpeed.h"
-#include "encoderParameter.h"
-#include <Arduino.h>
 
-float globalSpeed::getGlobalSpeedRpm(int nbtour1, int nbtour2, int nbtour3, int nbtour4){
+float globalSpeed::getGlobalSpeedRpm(int iPulseFrontRight, int iPulseFrontLeft, int iPulseBackRight, int iPulseBackLeft)
+{
+  float speedFrontRight = 0;
+  float speedFrontLeft = 0;
   float speedBackRight = 0;
   float speedBackLeft = 0;
 
-  speedBackRight = this->rotaryEncoderBackRight.getMeanSpeedKmh(nbtour1, nbtour2);
-  speedBackLeft = this->rotaryEncoderBackLeft.getMeanSpeedKmh(nbtour3, nbtour4);
+  speedFrontRight = this->rotaryEncoderFrontRight.getSpeedRpm(iPulseFrontRight);
+  speedFrontLeft = this->rotaryEncoderFrontLeft.getSpeedRpm(iPulseFrontLeft);
+  speedBackRight = this->rotaryEncoderBackRight.getSpeedRpm(iPulseBackRight);
+  speedBackLeft = this->rotaryEncoderBackLeft.getSpeedRpm(iPulseBackLeft);
 
-  Serial.print("Vitesse en RPM1 = ");
-  Serial.println(speedBackRight);
-  Serial.print("Vitesse en RPM2 = ");
-  Serial.println(speedBackLeft);
+  // Serial.print(">Vitesse FrontRight:");
+  // Serial.println(speedFrontRight);
+  // Serial.print(">Vitesse Frontleft:");
+  // Serial.println(speedFrontLeft);
+  // Serial.print(">Vitesse BackRight:");
+  // Serial.println(speedBackRight);
+  // Serial.print(">Vitesse Backleft:");
+  // Serial.println(speedBackLeft);
 
-  this->meanGlobalAngularSpeed = ((speedBackRight + speedBackLeft) / 2);        
+  this->meanGlobalAngularSpeed = ((speedFrontRight + speedFrontLeft+ speedBackRight + speedBackLeft) / 4);
   
-    return this->meanGlobalAngularSpeed;
-  }
+  return this->meanGlobalAngularSpeed;
+}
 
-  float globalSpeed::getGlobalSpeedKmh(int nbtour1, int nbtour2, int nbtour3, int nbtour4){
-    float speedRpm = 0;
-    speedRpm = this->getGlobalSpeedRpm(nbtour1,nbtour2,nbtour3,nbtour4);
-   
-    this->meanGlobalLinearSpeed = (speedRpm * PI * wheelDiameter) / (60 * 3.6);
+float globalSpeed::getGlobalSpeedKmh(int iPulseFrontRight, int iPulseFrontLeft, int iPulseBackRight, int iPulseBackLeft)
+{
+  float speedRpm = 0;
+  speedRpm = this->getGlobalSpeedRpm(iPulseFrontRight,iPulseFrontLeft,iPulseBackRight,iPulseBackLeft);
+  
+  this->meanGlobalLinearSpeed = speedRpm * PI * wheelDiameter/60*3.6;
 
-      return this->meanGlobalLinearSpeed;
-    }
+  return this->meanGlobalLinearSpeed;
+}

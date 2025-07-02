@@ -1,92 +1,59 @@
-#include <Arduino.h>
-#include <STM32FreeRTOS.h>
 #include "main.h"
 
-#include "motorController/motionManager.h"
-#include "motorController/movementController.h"
-#include "speedMesurement/rotaryEncoder.h"
-#include "speedMesurement/globalSpeed.h"
+HallSensor hallSensor1;
+rotaryEncoder rotaryEncoder1;
 
-void UartTask(void *pvParameters);
-void MotorTask(void *pvParameters);
-void speedMesurementTask(void *pvParameters);
-void displayInformationTask(void *pvParameters);
-
-void task_create(void);
+movementController movementController1;
+globalSpeed globalSpeed1;
+MotionManager motionManager;
+rotaryEncoder rotaryEncoderFrontLeft;
 
 void task_create(void){
   Serial.println("Init FreeRTOS Task...");
-  // Créer deux tâches
+
   xTaskCreate(UartTask, "UartTask", 256, NULL, 1, NULL);
   xTaskCreate(MotorTask, "MotorTask", 256, NULL, 1, NULL);
   xTaskCreate(speedMesurementTask, "rotaryEncoderTask", 256, NULL, 1, NULL);
   xTaskCreate(displayInformationTask, "displayInformationTask", 256, NULL, 1, NULL);
-
-  Serial.println("Done");
+  xTaskCreate(ImuProcessingTask, "ImuProcessingTask", 256, NULL, 1, NULL);
+  xTaskCreate(PIDTask,"PIDTask", 256, NULL, 1, NULL);
 }
+
+extern volatile int iNombreTour[4];
+extern volatile int iDirection[4];
 
 volatile unsigned int nombreTours = 0;
 volatile unsigned int nombreTours2 = 0;
 volatile unsigned int nombreTours3 = 0;
 volatile unsigned int nombreTours4 = 0;
 
-HallSensor hallSensor1;
-rotaryEncoder rotaryEncoder1;
-movementController movementController1;
-globalSpeed globalSpeed1;
-MotionManager motionManager;
-
 HardwareSerial Serial2(PD6, PD5);
 
-void compterTour() {
-  nombreTours++;
-}
-
-void compterTour2() {
-  nombreTours2++;
-}
-
-// void compterTour3() {
-//   nombreTours3++;
+// void compterTour() {
+//   nombreTours++;
 // }
 
-// void compterTour4() {
-//   nombreTours4++;
+// void compterTour2() {
+//   nombreTours2++;
 // }
+
 
 void setup() {
-  // put your setup code here, to run once:
-  pinMode(rightBackMotorHigh, OUTPUT);
-  pinMode(rightBackMotorLow, OUTPUT);
-  pinMode(rightBackMotorPWM, OUTPUT);
 
-  pinMode(leftBackMotorHigh, OUTPUT);
-  pinMode(leftBackMotorLow, OUTPUT);
-  pinMode(leftBackMotorPWM, OUTPUT);
-
-  pinMode(rightFrontMotorHigh, OUTPUT);
-  pinMode(rightFrontMotorLow, OUTPUT);
-  pinMode(rightFrontMotorPWM, OUTPUT);
-    pinMode(rightFrontFirstHallSensor, INPUT);
-  pinMode(rightFrontSecondHallSensor, INPUT);
-
-  pinMode(leftFrontMotorHigh, OUTPUT);
-  pinMode(leftFrontMotorLow, OUTPUT);
-  pinMode(leftFrontMotorPWM, OUTPUT);
-  pinMode(leftFrontFirstHallSensor, INPUT);
-  pinMode(leftFrontSecondHallSensor, INPUT);
+  GPIO_init();
 
   Serial.begin(115200);
-
 
   Serial2.begin(9600);
 
   delay(1000); // Laisse le temps au port série de s'initialiser
 
-  attachInterrupt(digitalPinToInterrupt(rightFrontFirstHallSensor), compterTour, FALLING); // Détection du front descendant
-  attachInterrupt(digitalPinToInterrupt(rightFrontFirstHallSensor), compterTour2, FALLING); // Détection du front descendant
+  // attachInterrupt(digitalPinToInterrupt(rightFrontFirstHallSensor), compterTour, FALLING); // Détection du front descendant
+  // attachInterrupt(digitalPinToInterrupt(rightFrontFirstHallSensor), compterTour2, FALLING); // Détection du front descendant
   // attachInterrupt(digitalPinToInterrupt(leftBackFirstHallSensor), compterTour3, FALLING); // Détection du front descendant
   // attachInterrupt(digitalPinToInterrupt(leftBackSecondHallSensor), compterTour4, FALLING); // Détection du front descendant
+
+  createIT();
 
   task_create();
   // Démarrer le scheduler FreeRTOS
@@ -94,10 +61,9 @@ void setup() {
 
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  /*Serial.println("Ahah");
-  delay(100);*/
+void loop() 
+{
+
 }
 
 void UartTask(void *pvParameters) {
@@ -108,45 +74,79 @@ void UartTask(void *pvParameters) {
   }
 }
 
-  // ---------- Tâche 2 ----------
-  void MotorTask(void *pvParameters) {
-    (void) pvParameters;
-    while (1) {
+void MotorTask(void *pvParameters) {
+  (void) pvParameters;
+  while (1) {
 
-      motionManager.GoUpBack();
+    motionManager.GoUpBack();
 
-      vTaskDelay(pdMS_TO_TICKS(200));
-    }
+    vTaskDelay(pdMS_TO_TICKS(200));
   }
+}
 
-  float vitesse = 0;
-  void speedMesurementTask(void *pvParameters) {
-    (void) pvParameters;
-    while (1) {
+float vitesse = 0;
+float vitessetopgauche = 0;
+void speedMesurementTask(void *pvParameters) {
+  (void) pvParameters;
+  while (1) {
 
-      vitesse = rotaryEncoder1.getMeanSpeedKmh(nombreTours, nombreTours2);
-      // vitesse = globalSpeed1.getGlobalSpeedKmh(nombreTours, nombreTours2, nombreTours3, nombreTours4);
-      nombreTours = 0;
-      nombreTours2 = 0;
-      // nombreTours3 = 0;
-      // nombreTours4 = 0;
+    vitesse = globalSpeed1.getGlobalSpeedKmh(iNombreTour[0], iNombreTour[1], iNombreTour[2], iNombreTour[3]);
+    vitessetopgauche = rotaryEncoderFrontLeft.getSpeedRpm(iNombreTour[1]);
+    iNombreTour[0] = 0;
+    iNombreTour[1] = 0;
+    iNombreTour[2] = 0;
+    iNombreTour[3] = 0;
 
-
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
+}
 
-  void displayInformationTask(void *pvParameters) {
-    (void) pvParameters;
-    while (1) {
+void displayInformationTask(void *pvParameters) {
+  (void) pvParameters;
+  while (1) {
 
-      /*Serial.print("Encodeur1= ");
-      Serial.println(nombreTours);
-      Serial.print("Encodeur2= ");
-      Serial.println(nombreTours2);*/
-      Serial.print("Vitesse en km/h = ");
-      Serial.println(vitesse),3;
+    /*Serial.print("Encodeur1= ");
+    Serial.println(nombreTours);
+    Serial.print("Encodeur2= ");
+    Serial.println(nombreTours2);*/
+    Serial.print("Vitesse en km/h = ");
+    Serial.println(vitesse),3;
 
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+    // Serial.print("Encodeur1= ");
+    // Serial.println(iNombreTour[0]);
+    // Serial.print("Direction1= ");
+    // Serial.println(iDirection[0]);
+    // Serial.print("Encodeur2= ");
+    // Serial.println(iNombreTour[1]);
+    // Serial.print("Direction2= ");
+    // Serial.println(iDirection[1]);
+    // Serial.print("Encodeur3= ");
+    // Serial.println(iNombreTour[2]);
+    // Serial.print("Direction3= ");
+    // Serial.println(iDirection[2]);
+    // Serial.print("Encodeur4= ");
+    // Serial.println(iNombreTour[3]);
+    // Serial.print("Direction4= ");
+    // Serial.println(iDirection[3]);
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
+}
+
+void ImuProcessingTask(void *pvParameters) {
+  (void) pvParameters;
+  while (1) {
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
+}
+
+void PIDTask(void *pvParameters) {
+  (void) pvParameters;
+  while (1) {
+
+    // ClosedLoopPID(500.0f, vitessetopgauche);
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
+} 

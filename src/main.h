@@ -1,28 +1,21 @@
-//right back motor
-#define leftFrontMotorHigh PE15
-#define leftFrontMotorLow PB10
-#define leftFrontMotorPWM PB11
-#define leftFrontFirstHallSensor PA7
-#define leftFrontSecondHallSensor PF2
+#include <Arduino.h>
+#include <STM32FreeRTOS.h>
 
-//left back motor
-#define rightFrontMotorHigh PE14
-#define rightFrontMotorLow PE12
-#define rightFrontMotorPWM PE10
-#define rightFrontFirstHallSensor PA3
-#define rightFrontSecondHallSensor PC0
+#include "GPIO.h"
+#include "IT.h"
 
+#include "motorController/motionManager.h"
+#include "motorController/movementController.h"
+#include "speedMesurement/rotaryEncoder.h"
+#include "speedMesurement/globalSpeed.h"
+#include "speedControlSystem/closedLoopControl.h"
+// #include "positionManagement/Imu.h"
 
-//right front motor
-#define leftBackMotorHigh PB13
-#define leftBackMotorLow PB15
-#define leftBackMotorPWM PC6
-#define leftBackFirstHallSensor 
-#define leftBackSecondHallSensor
+void UartTask(void *pvParameters);
+void MotorTask(void *pvParameters);
+void speedMesurementTask(void *pvParameters);
+void displayInformationTask(void *pvParameters);
+void ImuProcessingTask(void *pvParameters);
+void PIDTask(void *pvParameters);
 
-//left front motor
-#define rightBackMotorHigh PA15
-#define rightBackMotorLow PC7
-#define rightBackMotorPWM PB5
-#define rightBackFirstHallSensor
-#define rightBackSecondHallSensor
+void task_create(void);

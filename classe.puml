@@ -1,0 +1,70 @@
+@startuml
+
+class motorGearBox {
+    - int pinHigh
+    - int pinLow
+    - int pinPWM
+    + void setMotorDirection(int direction, float pwm)
+}
+
+class HallSensor {
+    - int pin
+    + int getState()
+    + void attachInterrupt(void (*isr)(), int mode)
+}
+
+class rotaryEncoder {
+    - int pinA
+    - int pinB
+    + float getSpeedRpm(int pulse)
+    + int getDirection()
+    - HallSensor hallSensorA
+    - HallSensor hallSensorB
+}
+
+class globalSpeed {
+    + float getGlobalSpeedRpm(int, int, int, int)
+    + float getGlobalSpeedKmh(int, int, int, int)
+    - rotaryEncoder encoder1
+    - rotaryEncoder encoder2
+    - rotaryEncoder encoder3
+    - rotaryEncoder encoder4
+}
+
+class movementController {
+    + void moveForward()
+    + void moveBackward()
+    + void moveLeft()
+    + void moveRight()
+    + void stop()
+    - motorGearBox leftFrontMotor
+    - motorGearBox rightFrontMotor
+    - motorGearBox leftBackMotor
+    - motorGearBox rightBackMotor
+}
+
+class MotionManager {
+    + void GoUpBack()
+    - movementController controller
+}
+
+class ClosedLoopControl {
+    - float Kp_PID
+    - float Ki_PID
+    - float Kd_PID
+    - float lastError
+    - float integral
+    - motorGearBox* controlledMotor
+    + ClosedLoopControl(motorGearBox* motor, float Kp, float Ki, float Kd)
+    + float compute(float setpoint, float measuredSpeed)
+    + void setTunings(float Kp, float Ki, float Kd)
+    - float thresholdPID(float pwmOutput)
+}
+
+rotaryEncoder *-- HallSensor : utilise
+globalSpeed *-- rotaryEncoder : utilise
+movementController *-- motorGearBox : contrôle
+MotionManager *-- movementController : contrôle
+ClosedLoopControl --> motorGearBox : régule
+
+@enduml

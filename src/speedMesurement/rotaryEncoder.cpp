@@ -1,29 +1,25 @@
 #include "rotaryEncoder.h"
-#include "encoderParameter.h"
-#include <Arduino.h>
 
-  float rotaryEncoder::getMeanSpeedRpm(int pulse1, int pulse2){
-    float sensor1AngularSpeed = 0;
-    float sensor2AngularSpeed = 0;
+float sensor1AngularSpeed = 0;
+float sensor1LinearSpeed = 0;
 
-        this->sensor1.hallPulses = pulse1;
-        this->sensor2.hallPulses = pulse2;
+float rotaryEncoder::getSpeedRpm(int ipulse)
+{
+  sensor1.hallPulses = ipulse;
+  sensor1AngularSpeed = sensor1.getHallAngularSpeed();
 
-        sensor1AngularSpeed = this->sensor1.getHallAngularSpeed();
-        sensor2AngularSpeed = this->sensor2.getHallAngularSpeed();
+  return sensor1AngularSpeed;
+}
 
-        this->meanAngularSpeed= ((sensor1AngularSpeed + sensor2AngularSpeed) / 2);
+float rotaryEncoder::getSpeedKmH(int ipulse)
+{
+  int SpeedKmh = this->getSpeedRpm(ipulse);
+  sensor1LinearSpeed = SpeedKmh*PI*wheelDiameter/60*3.6;
 
-    return this->meanAngularSpeed;
-  }
+  return sensor1LinearSpeed;
+}
 
-  float rotaryEncoder::getMeanSpeedKmh(int pulse1, int pulse2){
-
-    int MeanSpeedRpm = this->getMeanSpeedRpm(pulse1, pulse2);
-    this->meanLinearSpeed = MeanSpeedRpm*PI*wheelDiameter/60*3.6;
-
-    return this->meanLinearSpeed;
-  }
-
-  int rotaryEncoder::getDirection(){
-  }
+int rotaryEncoder::getDirection(int iDirection)
+{
+  iMotorDirection = iDirection;
+}

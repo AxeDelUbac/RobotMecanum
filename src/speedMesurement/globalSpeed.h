@@ -1,14 +1,19 @@
 #ifndef GLOBALSPEED_H
 #define GLOBALSPEED_H
 
+#include <Arduino.h>
+#include "encoderParameter.h"
+
 #include "rotaryEncoder.h"
 
 class globalSpeed {
     public:
-        float getGlobalSpeedKmh(int nbtour1, int nbtour2, int nbtour3, int nbtour4); // Retourne la vitesse en km/h
-        float getGlobalSpeedRpm(int nbtour1, int nbtour2, int nbtour3, int nbtour4); // Retourne la vitesse en RPM
+    
+        float getGlobalSpeedKmh(int iPulseFrontRight, int iPulseFrontLeft, int iPulseBackRight, int iPulseBackLeft);
+        float getGlobalSpeedRpm(int iPulseFrontRight, int iPulseFrontLeft, int iPulseBackRight, int iPulseBackLeft);
 
     private:
+
         float meanGlobalAngularSpeed; // Vitesse angulaire en RPM
         float meanGlobalLinearSpeed; // Vitesse linéaire en km/h
 
