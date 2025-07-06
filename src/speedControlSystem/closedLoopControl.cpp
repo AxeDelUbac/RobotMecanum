@@ -1,29 +1,30 @@
 #include "closedLoopControl.h"
 
-ClosedLoopControl::ClosedLoopControl(motorGearBox* motor, float Kp, float Ki, float Kd)
-    : controlledMotor(motor), Kp_PID(Kp), Ki_PID(Ki), Kd_PID(Kd), lastError(0.0f), integral(0.0f)
+ClosedLoopControl::ClosedLoopControl(float Kp, float Ki, float Kd)
+    : Kp_PID(Kp), Ki_PID(Ki), Kd_PID(Kd), lastError(0.0f), integral(0.0f)
 {}
 
-float ClosedLoopControl::compute(float setpoint, float measuredSpeed)
+float ClosedLoopControl::updatePIDControl(float fSetpointKmh, float fMeasuredSpeedKmh)
 {
-    float error = setpoint - measuredSpeed;
-    integral += Ki_PID * error;
-    float derivative = error - lastError;
+    float fErrorPID = fSetpointKmh - fMeasuredSpeedKmh;
+    integral += Ki_PID * fErrorPID;
+    float derivative = fErrorPID - lastError;
 
-    float output = Kp_PID * error + integral + Kd_PID * derivative;
-    output = thresholdPID(output);
+    float fOutputPID = Kp_PID * fErrorPID + integral + Kd_PID * derivative;
+    fOutputPID = thresholdPID(fOutputPID);
 
-    if (controlledMotor) {
-        controlledMotor->setMotorDirection(1, output);
-    }
+    // if (controlledMotor) {
+    //     controlledMotor->setMotorDirection(1, output);
+    // }
 
     Serial.print(">Sortie:");
-    Serial.println(output);
+    Serial.println(fOutputPID);
     Serial.print(">Erreur:");
-    Serial.println(error);
+    Serial.println(fErrorPID);
 
-    lastError = error;
-    return output;
+    lastError = fErrorPID;
+
+    return fOutputPID;
 }
 
 void ClosedLoopControl::setTunings(float Kp, float Ki, float Kd)
@@ -33,15 +34,15 @@ void ClosedLoopControl::setTunings(float Kp, float Ki, float Kd)
     Kd_PID = Kd;
 }
 
-float ClosedLoopControl::thresholdPID(float pwmOutput)
+float ClosedLoopControl::thresholdPID(float fPwmOutput)
 {
-    if (pwmOutput > 255.0f)
+    if (fPwmOutput > 255.0f)
     {
-        pwmOutput = 255.0f;
+        fPwmOutput = 255.0f;
     }
-    if (pwmOutput < 0.0f)
+    if (fPwmOutput < 0.0f)
     {
-        pwmOutput = 0.0f;
+        fPwmOutput = 0.0f;
     }
-    return pwmOutput;
+    return fPwmOutput;
 }

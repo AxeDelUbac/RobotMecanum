@@ -8,6 +8,11 @@ globalSpeed globalSpeed1;
 MotionManager motionManager;
 rotaryEncoder rotaryEncoderFrontLeft;
 
+motorGearBox oleftFrontMotor(leftFrontMotorHigh, leftFrontMotorLow, leftFrontMotorPWM);
+// ClosedLoopControl closedLoopControl1(&oleftFrontMotor, 2.0f, 1.0f, 0.01f);
+ClosedLoopControl closedLoopControl1( 2.0f, 1.5f, 0.05f);
+
+
 void task_create(void){
   Serial.println("Init FreeRTOS Task...");
 
@@ -27,16 +32,9 @@ volatile unsigned int nombreTours2 = 0;
 volatile unsigned int nombreTours3 = 0;
 volatile unsigned int nombreTours4 = 0;
 
+volatile float PIDoutput = 0.0f;
+
 HardwareSerial Serial2(PD6, PD5);
-
-// void compterTour() {
-//   nombreTours++;
-// }
-
-// void compterTour2() {
-//   nombreTours2++;
-// }
-
 
 void setup() {
 
@@ -47,11 +45,6 @@ void setup() {
   Serial2.begin(9600);
 
   delay(1000); // Laisse le temps au port série de s'initialiser
-
-  // attachInterrupt(digitalPinToInterrupt(rightFrontFirstHallSensor), compterTour, FALLING); // Détection du front descendant
-  // attachInterrupt(digitalPinToInterrupt(rightFrontFirstHallSensor), compterTour2, FALLING); // Détection du front descendant
-  // attachInterrupt(digitalPinToInterrupt(leftBackFirstHallSensor), compterTour3, FALLING); // Détection du front descendant
-  // attachInterrupt(digitalPinToInterrupt(leftBackSecondHallSensor), compterTour4, FALLING); // Détection du front descendant
 
   createIT();
 
@@ -78,7 +71,8 @@ void MotorTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    motionManager.GoUpBack();
+    // motionManager.GoUpBack();
+    oleftFrontMotor.setMotorDirection(1, PIDoutput); // Avance à 100% de la vitesse
 
     vTaskDelay(pdMS_TO_TICKS(200));
   }
@@ -91,13 +85,13 @@ void speedMesurementTask(void *pvParameters) {
   while (1) {
 
     vitesse = globalSpeed1.getGlobalSpeedKmh(iNombreTour[0], iNombreTour[1], iNombreTour[2], iNombreTour[3]);
-    vitessetopgauche = rotaryEncoderFrontLeft.getSpeedRpm(iNombreTour[1]);
+    vitessetopgauche = rotaryEncoderFrontLeft.getSpeedKmH(iNombreTour[1]);
     iNombreTour[0] = 0;
     iNombreTour[1] = 0;
     iNombreTour[2] = 0;
     iNombreTour[3] = 0;
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 
@@ -105,12 +99,11 @@ void displayInformationTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    /*Serial.print("Encodeur1= ");
-    Serial.println(nombreTours);
-    Serial.print("Encodeur2= ");
-    Serial.println(nombreTours2);*/
     Serial.print("Vitesse en km/h = ");
     Serial.println(vitesse),3;
+
+      Serial.print("Vitesse top gauche km/h = ");
+    Serial.println(vitessetopgauche),3;
 
     // Serial.print("Encodeur1= ");
     // Serial.println(iNombreTour[0]);
@@ -145,8 +138,8 @@ void PIDTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    // ClosedLoopPID(500.0f, vitessetopgauche);
+    PIDoutput = closedLoopControl1.updatePIDControl(0.1f, vitesse);
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 } 

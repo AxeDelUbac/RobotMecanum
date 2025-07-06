@@ -6,9 +6,9 @@
 
 class ClosedLoopControl {
 public:
-    ClosedLoopControl(motorGearBox* motor, float Kp = 1.0f, float Ki = 0.1f, float Kd = 0.01f);
+    ClosedLoopControl(float Kp = 1.0f, float Ki = 0.1f, float Kd = 0.01f);
 
-    float compute(float setpoint, float measuredSpeed);
+    float updatePIDControl(float setpoint, float measuredSpeed);
     void setTunings(float Kp, float Ki, float Kd);
 
 private:
@@ -21,6 +21,6 @@ private:
     float lastError;
     float integral;
 
-    motorGearBox* controlledMotor;
+    // motorGearBox* controlledMotor;
 };
 #endif

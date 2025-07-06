@@ -54,17 +54,30 @@ class ClosedLoopControl {
     - float Kd_PID
     - float lastError
     - float integral
-    - motorGearBox* controlledMotor
-    + ClosedLoopControl(motorGearBox* motor, float Kp, float Ki, float Kd)
-    + float compute(float setpoint, float measuredSpeed)
+    + float updatePIDControl(float setpoint, float measuredSpeed)
     + void setTunings(float Kp, float Ki, float Kd)
     - float thresholdPID(float pwmOutput)
 }
 
-rotaryEncoder *-- HallSensor : utilise
-globalSpeed *-- rotaryEncoder : utilise
-movementController *-- motorGearBox : contrôle
-MotionManager *-- movementController : contrôle
-ClosedLoopControl --> motorGearBox : régule
+class main <<principal>> {
+    + void task_create()
+    + void setup()
+    + void loop()
+    - rotaryEncoder rotaryEncoderFrontLeft
+    - movementController movementController1
+    - globalSpeed globalSpeed1
+    - MotionManager motionManager
+    - ClosedLoopControl closedLoopControl1
+}
+
+main --> MotionManager
+MotionManager --> movementController : contrôle
+movementController --> motorGearBox : contrôle
+
+globalSpeed --> main
+rotaryEncoder --> globalSpeed
+HallSensor --> rotaryEncoder
+
+main <-> ClosedLoopControl
 
 @enduml
