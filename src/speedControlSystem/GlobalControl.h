@@ -3,19 +3,16 @@
 
 #include "closedLoopControl.h"
 
-class GlobalControl {
-public:
-    GlobalControl();
-    void UpdateSetpoint(float fSetpointKmh, float fMeasuredSpeedKmh[4],float ftabSetpointKmh[4]);
-    void SerialDebug(void);
+typedef struct {
+    ClosedLoopControl closedLoopFrontLeft;
+    ClosedLoopControl closedLoopFrontRight;
+    ClosedLoopControl closedLoopRearLeft;
+    ClosedLoopControl closedLoopRearRight;
+    float ftabSetpointKmh[4];
+} GlobalControl;
 
-private:
-    float ftabSetpointKmh[4]= {0.0f, 0.0f, 0.0f, 0.0f};
-
-    ClosedLoopControl* closedLoopFrontLeft;
-    ClosedLoopControl* closedLoopFrontRight;
-    ClosedLoopControl* closedLoopRearLeft;
-    ClosedLoopControl* closedLoopRearRight;
-};
+void GlobalControl_init(GlobalControl* gc);
+void GlobalControl_UpdateSetpoint(GlobalControl* gc, float fSetpointKmh, float fMeasuredSpeedKmh[4], float fOutputKmh[4]);
+void GlobalControl_SerialDebug(GlobalControl* gc);
 
 #endif

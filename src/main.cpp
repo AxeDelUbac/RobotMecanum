@@ -8,7 +8,7 @@ rotaryEncoder rotaryEncoderFrontRight;
 rotaryEncoder rotaryEncoderRearLeft;
 rotaryEncoder rotaryEncoderRearRight;
 
-GlobalControl oGlobalControl;
+GlobalControl tGlobalControl;
 
 
 void task_create(void){
@@ -104,7 +104,7 @@ void displayInformationTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    oGlobalControl.SerialDebug();
+    GlobalControl_SerialDebug(&tGlobalControl);
     oGlobalSpeed.serialDebug();
 
     vTaskDelay(pdMS_TO_TICKS(100));
@@ -124,7 +124,7 @@ void PIDTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    oGlobalControl.UpdateSetpoint(300, vitesseEncoder, PIDoutput);
+    GlobalControl_UpdateSetpoint(&tGlobalControl, 300, vitesseEncoder, PIDoutput);
 
     vTaskDelay(pdMS_TO_TICKS(100));
   }
