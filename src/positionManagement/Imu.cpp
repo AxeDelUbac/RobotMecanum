@@ -1,14 +1,15 @@
 #include "Imu.h"
 #include <Wire.h>
-#include <MPU6050.h>
 
-void Imu::begin(void)
+  MPU6050 mpu6050;
+
+void Imu_begin(void)
 {
   Wire.begin();
   mpu6050.initialize();
 }
 
-void Imu::getAccelerometer(float fAcceleration[3])
+void Imu_getAccelerometer(float fAcceleration[3])
 {
    int16_t ax, ay, az;
     mpu6050.getAcceleration(&ax, &ay, &az);
@@ -18,7 +19,7 @@ void Imu::getAccelerometer(float fAcceleration[3])
     fAcceleration[2] = az / 16384.0f;
 }
 
-void Imu::getGyroscope(float fGyroscope[3])
+void Imu_getGyroscope(float fGyroscope[3])
 {
     int16_t gx, gy, gz;
     mpu6050.getRotation(&gx, &gy, &gz);

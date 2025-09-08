@@ -9,7 +9,6 @@ rotaryEncoder rotaryEncoderRearLeft;
 rotaryEncoder rotaryEncoderRearRight;
 
 GlobalControl oGlobalControl;
-PositionOrientation oPositionOrientation;
 
 
 void task_create(void){
@@ -101,10 +100,6 @@ void speedMesurementTask(void *pvParameters) {
   }
 }
 
-float Accel[3];
-float Gyro[3];
-float roll, pitch, yaw;
-
 void displayInformationTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
@@ -139,9 +134,9 @@ void IMUTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    oPositionOrientation.begin();
-    oPositionOrientation.update(0.1f);
-    oPositionOrientation.getEulerAngles(roll, pitch, yaw); // Mettre à jour la position toutes les 100 ms
+    PositionOrientation_begin();
+    PositionOrientation_update(0.1f);
+    // PositionOrientation_getEulerAngles(roll, pitch, yaw); // Mettre à jour la position toutes les 100 ms
 
     vTaskDelay(pdMS_TO_TICKS(100));
   }

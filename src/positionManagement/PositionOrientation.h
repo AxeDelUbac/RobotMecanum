@@ -3,19 +3,14 @@
 
 #include "Imu.h"
 
-class PositionOrientation {
-    public:
-        PositionOrientation();
-        void begin();
-        void update(float dt);
-        void getEulerAngles(float& roll, float& pitch, float& yaw);
+    void PositionOrientation_begin();
+    void PositionOrientation_update(float dt);
+    void PositionOrientation_getEulerAngles(float roll, float pitch, float yaw);
 
-    private:
-
-        Imu imu;
+    typedef struct {
         float roll;
         float pitch;
         float yaw;
-};
+    } EulerAngles;
 
 #endif
