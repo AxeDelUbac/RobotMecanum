@@ -1,16 +1,15 @@
 #include "main.h"
 
-HallSensor hallSensor1;
-rotaryEncoder rotaryEncoder1;
+movementController oMovementController;
+globalSpeed oGlobalSpeed;
 
-movementController movementController1;
-globalSpeed globalSpeed1;
-MotionManager motionManager;
 rotaryEncoder rotaryEncoderFrontLeft;
+rotaryEncoder rotaryEncoderFrontRight;
+rotaryEncoder rotaryEncoderRearLeft;
+rotaryEncoder rotaryEncoderRearRight;
 
-motorGearBox oleftFrontMotor(leftFrontMotorHigh, leftFrontMotorLow, leftFrontMotorPWM);
-// ClosedLoopControl closedLoopControl1(&oleftFrontMotor, 2.0f, 1.0f, 0.01f);
-ClosedLoopControl closedLoopControl1( 2.0f, 1.5f, 0.05f);
+GlobalControl oGlobalControl;
+PositionOrientation oPositionOrientation;
 
 
 void task_create(void){
@@ -22,6 +21,7 @@ void task_create(void){
   xTaskCreate(displayInformationTask, "displayInformationTask", 256, NULL, 1, NULL);
   xTaskCreate(ImuProcessingTask, "ImuProcessingTask", 256, NULL, 1, NULL);
   xTaskCreate(PIDTask,"PIDTask", 256, NULL, 1, NULL);
+  xTaskCreate(IMUTask,"IMUTask", 256, NULL, 1, NULL);
 }
 
 extern volatile int iNombreTour[4];
@@ -32,7 +32,9 @@ volatile unsigned int nombreTours2 = 0;
 volatile unsigned int nombreTours3 = 0;
 volatile unsigned int nombreTours4 = 0;
 
-volatile float PIDoutput = 0.0f;
+float vitesseEncoder[4] = {0, 0, 0, 0};
+
+float PIDoutput[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
 HardwareSerial Serial2(PD6, PD5);
 
@@ -40,11 +42,10 @@ void setup() {
 
   GPIO_init();
 
+
   Serial.begin(115200);
 
   Serial2.begin(9600);
-
-  delay(1000); // Laisse le temps au port série de s'initialiser
 
   createIT();
 
@@ -70,59 +71,48 @@ void UartTask(void *pvParameters) {
 void MotorTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
-
-    // motionManager.GoUpBack();
-    oleftFrontMotor.setMotorDirection(1, PIDoutput); // Avance à 100% de la vitesse
+    oMovementController.setMotorSpeedInPWM(PIDoutput);
+    oMovementController.movementFront();
 
     vTaskDelay(pdMS_TO_TICKS(200));
   }
 }
 
 float vitesse = 0;
-float vitessetopgauche = 0;
+const float fSpeedMesurementPeriodMs = 100;
+
 void speedMesurementTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    vitesse = globalSpeed1.getGlobalSpeedKmh(iNombreTour[0], iNombreTour[1], iNombreTour[2], iNombreTour[3]);
-    vitessetopgauche = rotaryEncoderFrontLeft.getSpeedKmH(iNombreTour[1]);
+    vitesse = oGlobalSpeed.getGlobalSpeedKmh(iNombreTour[0], iNombreTour[1], iNombreTour[2], iNombreTour[3],fSpeedMesurementPeriodMs);
+
+    vitesseEncoder[0] = rotaryEncoderFrontLeft.getSpeedRpm(iNombreTour[1], fSpeedMesurementPeriodMs);
+    vitesseEncoder[1] = rotaryEncoderFrontRight.getSpeedRpm(iNombreTour[2], fSpeedMesurementPeriodMs);
+    vitesseEncoder[2] = rotaryEncoderRearLeft.getSpeedRpm(iNombreTour[3], fSpeedMesurementPeriodMs);
+    vitesseEncoder[3] = rotaryEncoderRearRight.getSpeedRpm(iNombreTour[0], fSpeedMesurementPeriodMs);
+
     iNombreTour[0] = 0;
     iNombreTour[1] = 0;
     iNombreTour[2] = 0;
     iNombreTour[3] = 0;
 
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(fSpeedMesurementPeriodMs));
   }
 }
+
+float Accel[3];
+float Gyro[3];
+float roll, pitch, yaw;
 
 void displayInformationTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    Serial.print("Vitesse en km/h = ");
-    Serial.println(vitesse),3;
+    oGlobalControl.SerialDebug();
+    oGlobalSpeed.serialDebug();
 
-      Serial.print("Vitesse top gauche km/h = ");
-    Serial.println(vitessetopgauche),3;
-
-    // Serial.print("Encodeur1= ");
-    // Serial.println(iNombreTour[0]);
-    // Serial.print("Direction1= ");
-    // Serial.println(iDirection[0]);
-    // Serial.print("Encodeur2= ");
-    // Serial.println(iNombreTour[1]);
-    // Serial.print("Direction2= ");
-    // Serial.println(iDirection[1]);
-    // Serial.print("Encodeur3= ");
-    // Serial.println(iNombreTour[2]);
-    // Serial.print("Direction3= ");
-    // Serial.println(iDirection[2]);
-    // Serial.print("Encodeur4= ");
-    // Serial.println(iNombreTour[3]);
-    // Serial.print("Direction4= ");
-    // Serial.println(iDirection[3]);
-
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 
@@ -133,12 +123,25 @@ void ImuProcessingTask(void *pvParameters) {
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
+float fOutputKmh[4];
 
 void PIDTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    PIDoutput = closedLoopControl1.updatePIDControl(0.1f, vitesse);
+    oGlobalControl.UpdateSetpoint(300, vitesseEncoder, PIDoutput);
+
+    vTaskDelay(pdMS_TO_TICKS(100));
+  }
+} 
+
+void IMUTask(void *pvParameters) {
+  (void) pvParameters;
+  while (1) {
+
+    oPositionOrientation.begin();
+    oPositionOrientation.update(0.1f);
+    oPositionOrientation.getEulerAngles(roll, pitch, yaw); // Mettre à jour la position toutes les 100 ms
 
     vTaskDelay(pdMS_TO_TICKS(100));
   }

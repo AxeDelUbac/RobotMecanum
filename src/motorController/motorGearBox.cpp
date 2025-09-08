@@ -7,23 +7,27 @@ motorGearBox::motorGearBox(int highPin, int lowPin, int pwmPin){
 
 }
 
-  void motorGearBox::setMotorDirection(bool direction, int pourcentSpeed){
-    int PWMSpeed = pourcentSpeed * 255 / 100; // Convertir la vitesse en pourcentage en valeur PWM 
+  void motorGearBox::setMotorDirectionPWM(bool iDirection, int iSpeedInPWM){
     
-    if (direction == 1) // avant
+    if (iDirection == 1) // avant
     {
       digitalWrite(this->highPin, HIGH); 
       digitalWrite(this->lowPin, LOW);
     }
-    else if (direction == 0)
+    else if (iDirection == 0)
     {
       digitalWrite(this->highPin, LOW); 
       digitalWrite(this->lowPin, HIGH);
     }
-    analogWrite(this->pwmPin, abs(PWMSpeed));
+    analogWrite(this->pwmPin, abs(iSpeedInPWM));
   }
 
-  void motorGearBox::stopMotor(){
+  void motorGearBox::stopMotor(void){
     digitalWrite(this->highPin, HIGH); 
     digitalWrite(this->lowPin, HIGH);
   }
+
+void motorGearBox::setMotorDirectionPercent(bool iDirection, int iSpeedInPercent) {
+    int PWMSpeed = iSpeedInPercent * 255 / 100;
+    setMotorDirectionPWM(iDirection, PWMSpeed);
+}

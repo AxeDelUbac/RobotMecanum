@@ -6,13 +6,15 @@
 
 class ClosedLoopControl {
 public:
-    ClosedLoopControl(float Kp = 1.0f, float Ki = 0.1f, float Kd = 0.01f);
+    ClosedLoopControl(float Kp = 1.0f, float Ki = 500.0f, float Kd = 0.1f);
 
     float updatePIDControl(float setpoint, float measuredSpeed);
     void setTunings(float Kp, float Ki, float Kd);
+    float getOutputPID(void);
+    float getErrorPID(void);
+    float thresholdPID(float pwmOutput);
 
 private:
-    float thresholdPID(float pwmOutput);
 
     float Kp_PID;
     float Ki_PID;
@@ -21,6 +23,8 @@ private:
     float lastError;
     float integral;
 
-    // motorGearBox* controlledMotor;
+    float fOutputPID;
+    float fErrorPID;
+
 };
 #endif

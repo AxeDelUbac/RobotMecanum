@@ -33,3 +33,24 @@ This directory contains the logic for measuring and managing the speed of the ro
 - **encoderParameter**: This header defines configuration parameters, constants, and calibration values for the encoders, ensuring accurate speed measurement.
 
 This module abstracts the speed measurement and sensor fusion logic for the robot's movement system.
+
+## Hardware
+
+- 1 STM32F746ZG microcontroller
+- 4 rotary encoder composed of 2 Hall Sensor
+- 4 DC motor
+- 2 L298N DC/Brussless motor Driver
+- 1 MPU6050 6 Axis Inertial Management Unit
+
+## Software feature to implement
+
+-Determine direction rotation of each wheel
+
+- Wheel PID Closed Loop Controller
+- Global Closed Loop Controller
+
+-Add Odometrie
+
+- Choc detection
+- Yaw, Pitch, Roll estimation
+- Navigation Estimation

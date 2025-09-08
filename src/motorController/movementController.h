@@ -11,23 +11,20 @@ class movementController {
 
         movementController();
 
-        void setDirection(int Xaxis, int Yaxis, int iSpeed);
+        void setDirection(int Xaxis, int YaxisZ,  int iSpeed); // Xaxis et Yaxis sont les valeurs de l'accéléromètre, iTabSpeedInPwm est le tableau des vitesses PWM pour chaque moteur
         void setRotation(int iSpeed);
         
-        void movementFront(int iSpeed);
-        void movementBack(int iSpeed);
-        void movementRight(int iSpeed);
-        void movementLeft(int iSpeed);
+        void movementFront(void);
+        void movementBack(void);
+        void movementRight(void);
+        void movementLeft(void);
 
-        void movementFrontLeft(int iSpeed);
-        void movementFrontRight(int iSpeed);
-        void movementBackLeft(int iSpeed);
-        void movementBackRight(int iSpeed);
+        void movementFrontLeft(void);
+        void movementFrontRight(void);
 
-        void rotationRight(int iSpeed);
-        void rotationLeft(int iSpeed);
+        void movementstop(void);
 
-        void movementstop();
+        void setMotorSpeedInPWM(float fTabSpeed[4]);
 
     private:
 
@@ -35,6 +32,8 @@ class movementController {
         motorGearBox oleftBackMotor;
         motorGearBox orightFrontMotor;
         motorGearBox oleftFrontMotor;
+
+        float fTabSpeedInPwm[4] = {0, 0, 0, 0};
 
 };
 

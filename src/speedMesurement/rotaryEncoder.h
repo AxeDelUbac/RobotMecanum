@@ -9,8 +9,8 @@
 class rotaryEncoder {
     public:
 
-        float getSpeedRpm(int ipulse);
-        float getSpeedKmH(int ipulse);
+        float getSpeedRpm(int ipulse, float fSpeedMesurementPeriod);
+        float getSpeedKmH(int ipulse, float fSpeedMesurementPeriod);
         int getDirection(int iDirection);
 
     private:

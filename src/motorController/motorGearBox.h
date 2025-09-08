@@ -8,7 +8,9 @@ class motorGearBox {
 
         motorGearBox(int highPin, int lowPin, int pwmPin);
 
-        void setMotorDirection(bool direction, int pourcentSpeed); // Stoppe le moteur
+        void setMotorDirectionPWM(bool iDirection, int iSpeedInPWM);
+        void setMotorDirectionPercent(bool iDirection, int iSpeedInPercent);
+
         void stopMotor(); // Définit la vitesse du moteur
 
     private:
