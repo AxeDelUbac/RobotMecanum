@@ -15,6 +15,7 @@
 #include "positionManagement/PositionOrientation.h"
 
 #include "commandProcessing/commandProcessing.h"
+#include "commandProcessing/bluetoothReception.h"
 
 void MotorRegulationTask(void *pvParameters);
 void speedMesurementTask(void *pvParameters);

@@ -4,7 +4,7 @@
 int i16DirectionXAxis;
 int i16DirectionYAxis;
 int iSpeedSetting;
-float iSetpointInRpm;
+int iSetpointInRpm;
 
 /**
  * @brief Initialise l'état du module de traitement des commandes.
@@ -16,7 +16,7 @@ void CommandProcessing_init(void)
     i16DirectionXAxis = 0;
     i16DirectionYAxis = 0;
     iSpeedSetting = 0;
-    iSetpointInRpm = 2.0f;
+    iSetpointInRpm = 0;
 }
 
 /**
@@ -52,17 +52,16 @@ void CommandProcessing_switchSpeedSetting(bool bSwitchSpeed) {
  *
  * @return int consigne de vitesse en RPM (iSpeedSetting * 50)
  */
-bool bval;
-bool btnA = 0;
-bool btnB = 0;
+
+char cBluetoothCommand;
 float CommandProcessing_modifySetpointInRpm(void)
 {
-    iSpeedSetting = 2;
-    if(btnA == true)
+    cBluetoothCommand = BluetoothReception_retreiveData();
+    if(cBluetoothCommand == 'F')
     {
         CommandProcessing_switchSpeedSetting(1);
     }
-    else if (btnB == true)
+    else if (cBluetoothCommand == 'B')
     {
         CommandProcessing_switchSpeedSetting(0);
     }

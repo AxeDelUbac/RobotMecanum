@@ -43,10 +43,9 @@ void setup() {
 
   GlobalControl_init(&tGlobalControl);
   CommandProcessing_init();
+  BluetoothReception_init();
 
   Serial.begin(115200);
-
-  Serial2.begin(9600);
 
   createIT();
 
@@ -110,9 +109,11 @@ void displayInformationTask(void *pvParameters) {
 void commandProcessingTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
-    fsetpointRpm = CommandProcessing_modifySetpointInRpm();
-    Serial.print("Setpoint RPM: ");
-    Serial.println(fsetpointRpm);
+
+        fsetpointRpm = CommandProcessing_modifySetpointInRpm();
+        // Serial.print("Setpoint RPM: ");
+        // Serial.println(fsetpointRpm);
+
 
     vTaskDelay(pdMS_TO_TICKS(100));
   }

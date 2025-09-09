@@ -1,6 +1,8 @@
 #ifndef COMMAND_PROCESSING_H
 #define COMMAND_PROCESSING_H
 
+#include "bluetoothReception.h"
+
 typedef enum {
     CMD_DIR_STOP = 0,
     CMD_DIR_FRONT,

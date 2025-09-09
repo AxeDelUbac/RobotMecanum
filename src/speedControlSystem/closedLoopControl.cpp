@@ -37,8 +37,6 @@ float ClosedLoopControl_updatePIDControl(ClosedLoopControl* ctl, float setpoint,
 
     ctl->lastError = ctl->fErrorPID;
 
-    Serial.print(" - output: ");
-    Serial.println(ctl->fOutputPID);
     return ctl->fOutputPID;
 }
 
