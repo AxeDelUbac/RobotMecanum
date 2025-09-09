@@ -1,59 +1,65 @@
 #include "closedLoopControl.h"
+#include <Arduino.h>
 
-ClosedLoopControl::ClosedLoopControl(float Kp, float Ki, float Kd)
-    : Kp_PID(Kp), Ki_PID(Ki), Kd_PID(Kd), lastError(0.0f), integral(0.0f)
-{}
+void ClosedLoopControl_init(ClosedLoopControl* ctl, float Kp, float Ki, float Kd) {
+    if (!ctl) return;
+    ctl->Kp = Kp;
+    ctl->Ki = Ki;
+    ctl->Kd = Kd;
+    ctl->lastError = 0.0f;
+    ctl->integral = 0.0f;
+    ctl->prevDerivativeFiltered = 0.0f;
+    ctl->fOutputPID = 0.0f;
+    ctl->fErrorPID = 0.0f;
+}
 
-float ClosedLoopControl::updatePIDControl(float fSetpointRpm, float fMeasuredSpeedRpm)
-{
-    // Erreur en RPM
-    fErrorPID = fSetpointRpm - fMeasuredSpeedRpm;
+float ClosedLoopControl_updatePIDControl(ClosedLoopControl* ctl, float setpoint, float measuredSpeed) {
+    if (!ctl){
+        return 0.0f;
+    }
+
+    // Erreur
+    ctl->fErrorPID = setpoint - measuredSpeed;
 
     // Intégrale (anti-windup)
-    integral += fErrorPID;
-    if (integral > 100.0f) integral = 100.0f;
-    if (integral < -100.0f) integral = -100.0f;
+    ctl->integral += ctl->fErrorPID;
+    if (ctl->integral > 100.0f) ctl->integral = 100.0f;
+    if (ctl->integral < -100.0f) ctl->integral = -100.0f;
 
-    // Dérivée
-    float derivative = fErrorPID - lastError;
+    // Dérivée (raw)
+    float derivative = ctl->fErrorPID - ctl->lastError;
 
-    // Calcul PID (sortie en PWM 8 bits)
-    fOutputPID = Kp_PID * fErrorPID + Ki_PID * integral + Kd_PID * derivative;
+    // Calcul PID
+    ctl->fOutputPID = ctl->Kp * ctl->fErrorPID + ctl->Ki * ctl->integral + ctl->Kd * derivative;
 
-    // Saturation PWM 8 bits
-    fOutputPID = thresholdPID(fOutputPID);
+    // Saturation
+    ctl->fOutputPID = ClosedLoopControl_thresholdPID(ctl, ctl->fOutputPID);
 
-    lastError = fErrorPID;
+    ctl->lastError = ctl->fErrorPID;
 
-    return fOutputPID;
+    Serial.print(" - output: ");
+    Serial.println(ctl->fOutputPID);
+    return ctl->fOutputPID;
 }
 
-void ClosedLoopControl::setTunings(float Kp, float Ki, float Kd)
-{
-    Kp_PID = Kp;
-    Ki_PID = Ki;
-    Kd_PID = Kd;
+void ClosedLoopControl_setTunings(ClosedLoopControl* ctl, float Kp, float Ki, float Kd) {
+    if (!ctl) return;
+    ctl->Kp = Kp;
+    ctl->Ki = Ki;
+    ctl->Kd = Kd;
 }
 
-float ClosedLoopControl::thresholdPID(float fPwmOutput)
-{
-    if (fPwmOutput > 255.0f)
-    {
-        fPwmOutput = 255.0f;
-    }
-    if (fPwmOutput < 0.0f)
-    {
-        fPwmOutput = 0.0f;
-    }
-    return fPwmOutput;
+float ClosedLoopControl_getOutputPID(ClosedLoopControl* ctl) {
+    return ctl ? ctl->fOutputPID : 0.0f;
 }
 
-float ClosedLoopControl::getOutputPID(void)
-{
-    return fOutputPID;
+float ClosedLoopControl_getErrorPID(ClosedLoopControl* ctl) {
+    return ctl ? ctl->fErrorPID : 0.0f;
 }
 
-float ClosedLoopControl::getErrorPID(void)
-{
-    return fErrorPID;
+float ClosedLoopControl_thresholdPID(ClosedLoopControl* ctl, float pwmOutput) {
+    (void)ctl;
+    if (pwmOutput > 255.0f) pwmOutput = 255.0f;
+    if (pwmOutput < 0.0f) pwmOutput = 0.0f;
+    return pwmOutput;
 }

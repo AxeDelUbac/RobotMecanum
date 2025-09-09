@@ -1,30 +1,35 @@
 #ifndef CLOSEDLOOPCONTROL_H
 #define CLOSEDLOOPCONTROL_H
 
-#include "motorController/motorGearBox.h"
-#include <Arduino.h>
+#include <stdint.h>
 
-class ClosedLoopControl {
-public:
-    ClosedLoopControl(float Kp = 1.0f, float Ki = 500.0f, float Kd = 0.1f);
-
-    float updatePIDControl(float setpoint, float measuredSpeed);
-    void setTunings(float Kp, float Ki, float Kd);
-    float getOutputPID(void);
-    float getErrorPID(void);
-    float thresholdPID(float pwmOutput);
-
-private:
-
-    float Kp_PID;
-    float Ki_PID;
-    float Kd_PID;
+typedef struct {
+    float Kp;
+    float Ki;
+    float Kd;
 
     float lastError;
     float integral;
+    float prevDerivativeFiltered;
 
     float fOutputPID;
     float fErrorPID;
+} ClosedLoopControl;
 
-};
-#endif
+// Initialise la structure ClosedLoopControl
+void ClosedLoopControl_init(ClosedLoopControl* ctl, float Kp, float Ki, float Kd);
+
+// Met à jour le PID et retourne la sortie (PWM attendu)
+float ClosedLoopControl_updatePIDControl(ClosedLoopControl* ctl, float setpoint, float measuredSpeed);
+
+// Change les gains
+void ClosedLoopControl_setTunings(ClosedLoopControl* ctl, float Kp, float Ki, float Kd);
+
+// Getters
+float ClosedLoopControl_getOutputPID(ClosedLoopControl* ctl);
+float ClosedLoopControl_getErrorPID(ClosedLoopControl* ctl);
+
+// Saturation helper
+float ClosedLoopControl_thresholdPID(ClosedLoopControl* ctl, float pwmOutput);
+
+#endif // CLOSEDLOOPCONTROL_H

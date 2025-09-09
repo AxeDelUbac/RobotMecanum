@@ -14,12 +14,12 @@
 // #include "positionManagement/Imu.h"
 #include "positionManagement/PositionOrientation.h"
 
-void UartTask(void *pvParameters);
-void MotorTask(void *pvParameters);
+#include "commandProcessing/commandProcessing.h"
+
+void MotorRegulationTask(void *pvParameters);
 void speedMesurementTask(void *pvParameters);
 void displayInformationTask(void *pvParameters);
-void ImuProcessingTask(void *pvParameters);
-void PIDTask(void *pvParameters);
+void commandProcessingTask(void *pvParameters);
 void IMUTask(void *pvParameters);
 
 void task_create(void);

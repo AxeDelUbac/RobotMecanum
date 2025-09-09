@@ -14,12 +14,10 @@ GlobalControl tGlobalControl;
 void task_create(void){
   Serial.println("Init FreeRTOS Task...");
 
-  xTaskCreate(UartTask, "UartTask", 256, NULL, 1, NULL);
-  xTaskCreate(MotorTask, "MotorTask", 256, NULL, 1, NULL);
+  xTaskCreate(MotorRegulationTask, "MotorRegulationTask", 256, NULL, 1, NULL);
   xTaskCreate(speedMesurementTask, "rotaryEncoderTask", 256, NULL, 1, NULL);
   xTaskCreate(displayInformationTask, "displayInformationTask", 256, NULL, 1, NULL);
-  xTaskCreate(ImuProcessingTask, "ImuProcessingTask", 256, NULL, 1, NULL);
-  xTaskCreate(PIDTask,"PIDTask", 256, NULL, 1, NULL);
+  xTaskCreate(commandProcessingTask, "commandProcessingTask", 256, NULL, 1, NULL);
   xTaskCreate(IMUTask,"IMUTask", 256, NULL, 1, NULL);
 }
 
@@ -35,12 +33,16 @@ float vitesseEncoder[4] = {0, 0, 0, 0};
 
 float PIDoutput[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
+float fsetpointRpm = 100;
+
 HardwareSerial Serial2(PD6, PD5);
 
 void setup() {
 
   GPIO_init();
 
+  GlobalControl_init(&tGlobalControl);
+  CommandProcessing_init();
 
   Serial.begin(115200);
 
@@ -59,21 +61,14 @@ void loop()
 
 }
 
-void UartTask(void *pvParameters) {
+void MotorRegulationTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
-    Serial2.println("Hello from UartTask");
-    vTaskDelay(pdMS_TO_TICKS(1000));
-  }
-}
-
-void MotorTask(void *pvParameters) {
-  (void) pvParameters;
-  while (1) {
+    GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, vitesseEncoder, PIDoutput);
     oMovementController.setMotorSpeedInPWM(PIDoutput);
     oMovementController.movementFront();
 
-    vTaskDelay(pdMS_TO_TICKS(200));
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 
@@ -104,31 +99,24 @@ void displayInformationTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
 
-    GlobalControl_SerialDebug(&tGlobalControl);
-    oGlobalSpeed.serialDebug();
+    // GlobalControl_SerialDebug(&tGlobalControl);
+    // oGlobalSpeed.serialDebug();
 
     vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 
-void ImuProcessingTask(void *pvParameters) {
+
+void commandProcessingTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
-
-    vTaskDelay(pdMS_TO_TICKS(1000));
-  }
-}
-float fOutputKmh[4];
-
-void PIDTask(void *pvParameters) {
-  (void) pvParameters;
-  while (1) {
-
-    GlobalControl_UpdateSetpoint(&tGlobalControl, 300, vitesseEncoder, PIDoutput);
+    fsetpointRpm = CommandProcessing_modifySetpointInRpm();
+    Serial.print("Setpoint RPM: ");
+    Serial.println(fsetpointRpm);
 
     vTaskDelay(pdMS_TO_TICKS(100));
   }
-} 
+}
 
 void IMUTask(void *pvParameters) {
   (void) pvParameters;
