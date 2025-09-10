@@ -1,40 +1,36 @@
-#ifndef DIRECTIONCONTROLLER_H
-#define DIRECTIONCONTROLLER_H
+#ifndef MOVEMENTCONTROLLER_H
+#define MOVEMENTCONTROLLER_H
 
 #include <Arduino.h>
 #include "GPIO.h"
-
 #include "motorGearBox.h"
 
-class movementController {
-    public:
+// C-style API: struct + functions
+typedef struct {
+    motorGearBox_t orightBackMotor;
+    motorGearBox_t oleftBackMotor;
+    motorGearBox_t orightFrontMotor;
+    motorGearBox_t oleftFrontMotor;
+    float fTabSpeedInPwm[4];
+} movementController_t;
 
-        movementController();
+// Lifecycle
+void MovementController_init(movementController_t* mc);
 
-        void setDirection(int Xaxis, int YaxisZ,  int iSpeed); // Xaxis et Yaxis sont les valeurs de l'accéléromètre, iTabSpeedInPwm est le tableau des vitesses PWM pour chaque moteur
-        void setRotation(int iSpeed);
-        
-        void movementFront(void);
-        void movementBack(void);
-        void movementRight(void);
-        void movementLeft(void);
+// Actions
+void MovementController_setDirection(movementController_t* mc, int Xaxis, int Yaxis, int iSpeed);
+void MovementController_setRotation(movementController_t* mc, int iSpeed);
 
-        void movementFrontLeft(void);
-        void movementFrontRight(void);
+void MovementController_movementFront(movementController_t* mc);
+void MovementController_movementBack(movementController_t* mc);
+void MovementController_movementRight(movementController_t* mc);
+void MovementController_movementLeft(movementController_t* mc);
 
-        void movementstop(void);
+void MovementController_movementFrontLeft(movementController_t* mc);
+void MovementController_movementFrontRight(movementController_t* mc);
 
-        void setMotorSpeedInPWM(float fTabSpeed[4]);
+void MovementController_movementstop(movementController_t* mc);
 
-    private:
-
-        motorGearBox orightBackMotor;
-        motorGearBox oleftBackMotor;
-        motorGearBox orightFrontMotor;
-        motorGearBox oleftFrontMotor;
-
-        float fTabSpeedInPwm[4] = {0, 0, 0, 0};
-
-};
+void MovementController_setMotorSpeedInPWM(movementController_t* mc, float fTabSpeed[4]);
 
 #endif

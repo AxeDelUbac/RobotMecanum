@@ -1,6 +1,5 @@
 #include "main.h"
 
-movementController oMovementController;
 globalSpeed oGlobalSpeed;
 
 rotaryEncoder rotaryEncoderFrontLeft;
@@ -9,6 +8,7 @@ rotaryEncoder rotaryEncoderRearLeft;
 rotaryEncoder rotaryEncoderRearRight;
 
 GlobalControl tGlobalControl;
+movementController_t tMovementController;
 
 
 void task_create(void){
@@ -40,14 +40,14 @@ HardwareSerial Serial2(PD6, PD5);
 void setup() {
 
   GPIO_init();
-
   GlobalControl_init(&tGlobalControl);
   CommandProcessing_init();
   BluetoothReception_init();
 
   Serial.begin(115200);
-
   createIT();
+
+  MovementController_init(&tMovementController);
 
   task_create();
   // Démarrer le scheduler FreeRTOS
@@ -64,8 +64,8 @@ void MotorRegulationTask(void *pvParameters) {
   (void) pvParameters;
   while (1) {
     GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, vitesseEncoder, PIDoutput);
-    oMovementController.setMotorSpeedInPWM(PIDoutput);
-    oMovementController.movementFront();
+  MovementController_setMotorSpeedInPWM(&tMovementController, PIDoutput);
+  MovementController_movementFront(&tMovementController);
 
     vTaskDelay(pdMS_TO_TICKS(100));
   }
