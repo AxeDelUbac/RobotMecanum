@@ -20,8 +20,8 @@ float ClosedLoopControl_updatePIDControl(ClosedLoopControl* ctl, float setpoint,
 
     // Intégrale (anti-windup)
     ctl->integral += ctl->fErrorPID;
-    if (ctl->integral > 100.0f) ctl->integral = 100.0f;
-    if (ctl->integral < -100.0f) ctl->integral = -100.0f;
+    if (ctl->integral > 50.0f) ctl->integral = 50.0f;
+    if (ctl->integral < -50.0f) ctl->integral = -50.0f;
 
     // Dérivée (raw)
     float derivative = ctl->fErrorPID - ctl->lastError;

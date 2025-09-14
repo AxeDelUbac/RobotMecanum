@@ -5,9 +5,7 @@
 #include "IT.h"
 
 #include "motorController/movementController.h"
-#include "speedMesurement/rotaryEncoder.h"
-
-// #include "speedControlSystem/closedLoopControl.h"
+#include "speedMesurement/GlobalSpeed.h"
 #include "speedControlSystem/GlobalControl.h"
 
 // #include "positionManagement/Imu.h"

@@ -1,10 +1,5 @@
 #include "main.h"
 
-rotaryEncoder rotaryEncoderFrontLeft;
-rotaryEncoder rotaryEncoderFrontRight;
-rotaryEncoder rotaryEncoderRearLeft;
-rotaryEncoder rotaryEncoderRearRight;
-
 GlobalControl tGlobalControl;
 movementController_t tMovementController;
 
@@ -29,18 +24,8 @@ void System_componentsInit(void){
   Imu_init();
 }
 
-extern volatile int iNombreTour[4];
-extern volatile int iDirection[4];
-
-volatile unsigned int nombreTours = 0;
-volatile unsigned int nombreTours2 = 0;
-volatile unsigned int nombreTours3 = 0;
-volatile unsigned int nombreTours4 = 0;
-
-float vitesseEncoder[4] = {0, 0, 0, 0};
-
+float fWheelSpeed[4] = {0, 0, 0, 0};
 float PIDoutput[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-
 float fsetpointRpm = 0;
 
 HardwareSerial Serial2(PD6, PD5);
@@ -90,8 +75,8 @@ void displayInformationTask(void *pvParameters) {
   const TickType_t xFrequency = pdMS_TO_TICKS(200);
   while (1) {
 
-    // GlobalControl_SerialDebug(&tGlobalControl);
-    Imu_SerialDebug();
+    GlobalSpeed_debug();
+    // Imu_SerialDebug();
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -100,7 +85,7 @@ void displayInformationTask(void *pvParameters) {
 void MotorRegulationTask(void *pvParameters) {
   while (1) {
 
-  GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, vitesseEncoder, PIDoutput);
+  GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, fWheelSpeed, PIDoutput);
 
   MovementController_setMotorSpeedInPWM(&tMovementController, PIDoutput);
   MovementController_movementFront(&tMovementController);
@@ -116,15 +101,7 @@ void speedMesurementTask(void *pvParameters) {
   const TickType_t xFrequency = pdMS_TO_TICKS(fSpeedMesurementPeriodMs);
   while (1) {
 
-    vitesseEncoder[0] = rotaryEncoderFrontLeft.getSpeedRpm(iNombreTour[1], fSpeedMesurementPeriodMs);
-    vitesseEncoder[1] = rotaryEncoderFrontRight.getSpeedRpm(iNombreTour[2], fSpeedMesurementPeriodMs);
-    vitesseEncoder[2] = rotaryEncoderRearLeft.getSpeedRpm(iNombreTour[3], fSpeedMesurementPeriodMs);
-    vitesseEncoder[3] = rotaryEncoderRearRight.getSpeedRpm(iNombreTour[0], fSpeedMesurementPeriodMs);
-
-    iNombreTour[0] = 0;
-    iNombreTour[1] = 0;
-    iNombreTour[2] = 0;
-    iNombreTour[3] = 0;
+    GlobalSpeed_getMeanSpeedInRPM(fWheelSpeed, fSpeedMesurementPeriodMs);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }

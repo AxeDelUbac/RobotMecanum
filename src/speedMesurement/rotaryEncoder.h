@@ -4,22 +4,14 @@
 #include <Arduino.h>
 #include "encoderParameter.h"
 
-#include "hallSensor.h"
+typedef struct {
+  float fAngularSpeedInRpm;
+  float fLinearSpeedInKmH;
+  int iMotorDirection;
+} rotaryEncoder_t;
 
-class rotaryEncoder {
-    public:
-
-        float getSpeedRpm(int ipulse, float fSpeedMesurementPeriod);
-        float getSpeedKmH(int ipulse, float fSpeedMesurementPeriod);
-        int getDirection(int iDirection);
-
-    private:
-        float meanAngularSpeed;
-        float meanLinearSpeed;
-        int iMotorDirection;
-
-        HallSensor sensor1;
-        HallSensor sensor2; 
-};
+float rotaryEncoder_getSpeedRpm(rotaryEncoder_t *enc, int ipulse, float fSpeedMesurementPeriod);
+float rotaryEncoder_getSpeedKmH(rotaryEncoder_t *enc, int ipulse, float fSpeedMesurementPeriod);
+int rotaryEncoder_getDirection(rotaryEncoder_t *enc, int iDirection);
 
 #endif
