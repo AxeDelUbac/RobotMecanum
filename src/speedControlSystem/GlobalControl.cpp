@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 void GlobalControl_init(GlobalControl* gc) {
-    ClosedLoopControl_init(&gc->closedLoopFrontLeft, 1.0f, 0.01f, 0.01f);
+    ClosedLoopControl_init(&gc->closedLoopFrontLeft, 1.5f, 0.1f, 0.04f);
     ClosedLoopControl_init(&gc->closedLoopFrontRight, 1.0f, 0.01f, 0.01f);
     ClosedLoopControl_init(&gc->closedLoopRearLeft, 1.0f, 0.01f, 0.01f);
     ClosedLoopControl_init(&gc->closedLoopRearRight, 1.0f, 0.1f, 0.01f);

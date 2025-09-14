@@ -2,8 +2,8 @@
 #include <math.h>
 
 
-void PositionOrientation_begin() {
-    Imu_begin();
+void PositionOrientation_init() {
+    Imu_init();
 }
 
 void PositionOrientation_update(float dt) {

@@ -36,6 +36,9 @@
 #define leftFrontFirstHallSensor PF9
 #define leftFrontSecondHallSensor PG1
 
+#define bluetoothUartTx PC10
+#define bluetoothUartRx PC11
+
 void GPIO_init(void);
 
 #endif // GPIO_H

@@ -17,9 +17,9 @@
 #include "commandProcessing/commandProcessing.h"
 #include "commandProcessing/bluetoothReception.h"
 
+void displayInformationTask(void *pvParameters);
 void MotorRegulationTask(void *pvParameters);
 void speedMesurementTask(void *pvParameters);
-void displayInformationTask(void *pvParameters);
 void commandProcessingTask(void *pvParameters);
 void IMUTask(void *pvParameters);
 

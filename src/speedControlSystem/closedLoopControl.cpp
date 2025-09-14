@@ -14,10 +14,7 @@ void ClosedLoopControl_init(ClosedLoopControl* ctl, float Kp, float Ki, float Kd
 }
 
 float ClosedLoopControl_updatePIDControl(ClosedLoopControl* ctl, float setpoint, float measuredSpeed) {
-    if (!ctl){
-        return 0.0f;
-    }
-
+    
     // Erreur
     ctl->fErrorPID = setpoint - measuredSpeed;
 

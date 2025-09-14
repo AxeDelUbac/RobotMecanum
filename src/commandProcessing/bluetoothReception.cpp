@@ -1,14 +1,14 @@
 #include "bluetoothReception.h"
 
-HardwareSerial Serial4(PC10, PC11);
+HardwareSerial BluetoothSerial(PC10, PC11);
 
 void BluetoothReception_init(void) {
-    Serial4.begin(9600);
+    BluetoothSerial.begin(9600);
 }
 
 char BluetoothReception_retreiveData(void) {
-    if (Serial4.available()) {
-        char cBluetoothCommand = Serial4.read();
+    if (BluetoothSerial.available()) {
+        char cBluetoothCommand = BluetoothSerial.read();
         Serial.print("Reçu via BT : ");
         Serial.println(cBluetoothCommand);
         return cBluetoothCommand; // Return the received character
