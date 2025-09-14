@@ -1,7 +1,5 @@
 #include "main.h"
 
-globalSpeed oGlobalSpeed;
-
 rotaryEncoder rotaryEncoderFrontLeft;
 rotaryEncoder rotaryEncoderFrontRight;
 rotaryEncoder rotaryEncoderRearLeft;
@@ -93,7 +91,6 @@ void displayInformationTask(void *pvParameters) {
   while (1) {
 
     // GlobalControl_SerialDebug(&tGlobalControl);
-    // oGlobalSpeed.serialDebug();
     Imu_SerialDebug();
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
@@ -112,15 +109,12 @@ void MotorRegulationTask(void *pvParameters) {
   }
 }
 
-float vitesse = 0;
 const float fSpeedMesurementPeriodMs = 100;
 
 void speedMesurementTask(void *pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t xFrequency = pdMS_TO_TICKS(fSpeedMesurementPeriodMs);
   while (1) {
-
-    vitesse = oGlobalSpeed.getGlobalSpeedKmh(iNombreTour[0], iNombreTour[1], iNombreTour[2], iNombreTour[3],fSpeedMesurementPeriodMs);
 
     vitesseEncoder[0] = rotaryEncoderFrontLeft.getSpeedRpm(iNombreTour[1], fSpeedMesurementPeriodMs);
     vitesseEncoder[1] = rotaryEncoderFrontRight.getSpeedRpm(iNombreTour[2], fSpeedMesurementPeriodMs);

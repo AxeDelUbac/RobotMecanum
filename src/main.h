@@ -6,7 +6,6 @@
 
 #include "motorController/movementController.h"
 #include "speedMesurement/rotaryEncoder.h"
-#include "speedMesurement/globalSpeed.h"
 
 // #include "speedControlSystem/closedLoopControl.h"
 #include "speedControlSystem/GlobalControl.h"
