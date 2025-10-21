@@ -36,17 +36,17 @@ void MecanumOdometry_setPose(MecanumOdometry_t* odometry, float x, float y, floa
 
 // Fonctions de calcul odométrique
 void MecanumOdometry_updateWheelSpeeds(MecanumOdometry_t* odometry, float wheelSpeed[4]);
-void MecanumOdometry_updateFromWheelVelocities(MecanumOdometry_t* odometry,float wheelVelocities[4],float deltaTime);
+void MecanumOdometry_updatePose(MecanumOdometry_t* odometry,float wheelVelocities[4],float deltaTime);
 
 // Fonctions de cinématique
-void MecanumOdometry_updateKinematics(float wheelVelocities[4],float wheelRadius, float wheelBase, float trackWidth,float* vx, float* vy, float* omega);
+void MecanumOdometry_updateKinematics(MecanumOdometry_t* odometry, float wheelVelocities[4]);
 
 // Fonctions utilitaires
 float MecanumOdometry_getDistanceTraveled(const MecanumOdometry_t* odometry, float startX, float startY);
 
 // Fonctions de conversion
 float MecanumOdometry_normalizeAngle(float angle);
-void MecanumOdometry_rpmArrayToMetersPerSecond(float rpmArray[4], float wheelRadius, float velocityArray[4]);
+void MecanumOdometry_rpmArrayToMetersPerSecond(MecanumOdometry_t* odometry, float rpmArray[4], float velocityArray[4]);
 
 // debug function
 void MecanumOdometry_debug(const MecanumOdometry_t* odometry);
