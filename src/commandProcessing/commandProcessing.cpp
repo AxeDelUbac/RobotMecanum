@@ -30,7 +30,7 @@ void CommandProcessing_switchSpeedSetting(bool bSwitchSpeed) {
     if(bSwitchSpeed == true)
     {
         iSpeedSetting++;
-        if(iSpeedSetting > 5)
+        if(iSpeedSetting > 8)
         {
             iSpeedSetting = 0;
         }

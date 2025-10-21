@@ -13,6 +13,7 @@
 
 #include "commandProcessing/commandProcessing.h"
 #include "commandProcessing/bluetoothReception.h"
+#include "speedControlSystem/mecanumOdometrie.h"
 
 void displayInformationTask(void *pvParameters);
 void MotorRegulationTask(void *pvParameters);

@@ -2,13 +2,14 @@
 
 GlobalControl tGlobalControl;
 movementController_t tMovementController;
+MecanumOdometry_t robotOdometry;
 
 
 void task_create(void){
   Serial.println("Init FreeRTOS Task...");
 
   xTaskCreate(displayInformationTask, "displayInformationTask", 256, NULL, 1, NULL);
-  xTaskCreate(MotorRegulationTask, "MotorRegulationTask", 256, NULL, 1, NULL);
+  xTaskCreate(MotorRegulationTask, "MotorRegulationTask", 512, NULL, 2, NULL);
   xTaskCreate(speedMesurementTask, "rotaryEncoderTask", 256, NULL, 1, NULL);
   xTaskCreate(commandProcessingTask, "commandProcessingTask", 256, NULL, 1, NULL);
   xTaskCreate(IMUTask,"IMUTask", 256, NULL, 1, NULL);
@@ -22,6 +23,10 @@ void System_componentsInit(void){
   BluetoothReception_init();
   PositionOrientation_init();
   Imu_init();
+  
+  // Initialisation de l'odométrie
+  float wheelRadius = wheelDiameter / 2.0f; // Utilise la constante du fichier encoderParameter.h
+  MecanumOdometry_init(&robotOdometry, wheelRadius, 0.20f, 0.18f); // Ajustez les dimensions selon votre robot
 }
 
 float fWheelSpeed[4] = {0, 0, 0, 0};
@@ -77,20 +82,27 @@ void displayInformationTask(void *pvParameters) {
 
     GlobalSpeed_debug();
     // Imu_SerialDebug();
+    MecanumOdometry_debug(&robotOdometry);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
 void MotorRegulationTask(void *pvParameters) {
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(50); // 20Hz pour asservissement + odométrie
+  
   while (1) {
+    // === ASSERVISSEMENT MOTEUR ===
+    GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, fWheelSpeed, PIDoutput);
+    MovementController_setMotorSpeedInPWM(&tMovementController, PIDoutput);
+    MovementController_movementFront(&tMovementController);
 
-  GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, fWheelSpeed, PIDoutput);
+    // === MISE À JOUR ODOMÉTRIE ===
+    // Utilise les vitesses mesurées par les encodeurs pour calculer la position
+    MecanumOdometry_updateWheelSpeeds(&robotOdometry, fWheelSpeed);
 
-  MovementController_setMotorSpeedInPWM(&tMovementController, PIDoutput);
-  MovementController_movementFront(&tMovementController);
-
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
@@ -112,7 +124,7 @@ void commandProcessingTask(void *pvParameters) {
 
         fsetpointRpm = CommandProcessing_modifySetpointInRpm();
 
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(50));
   }
 }
 
@@ -126,4 +138,6 @@ void IMUTask(void *pvParameters) {
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
-} 
+}
+
+ 

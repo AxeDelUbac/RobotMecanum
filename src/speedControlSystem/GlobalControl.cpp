@@ -2,18 +2,22 @@
 #include <Arduino.h>
 
 void GlobalControl_init(GlobalControl* gc) {
-    ClosedLoopControl_init(&gc->closedLoopFrontLeft, 4.0f, 1.0f, 0.05f);
-    ClosedLoopControl_init(&gc->closedLoopFrontRight, 4.0f, 1.0f, 0.05f);
-    ClosedLoopControl_init(&gc->closedLoopRearLeft, 4.0f, 1.0f, 0.05f);
-    ClosedLoopControl_init(&gc->closedLoopRearRight, 4.0f, 1.0f, 0.05f);
+
+    ClosedLoopControl_init(&gc->closedLoopFrontLeft, 2.4f, 1.13f, 0.00f);
+    ClosedLoopControl_init(&gc->closedLoopFrontRight, 2.4f, 1.13f, 0.05f);
+    ClosedLoopControl_init(&gc->closedLoopRearLeft, 2.4f, 1.13f, 0.05f);
+    ClosedLoopControl_init(&gc->closedLoopRearRight, 2.4f, 1.13f, 0.05f);
     for (int i = 0; i < 4; i++) gc->ftabSetpointKmh[i] = 0.0f;
 }
+
+int iloop = 50;
 
 void GlobalControl_UpdateSetpoint(GlobalControl* gc, float fSetpointKmh, float fMeasuredSpeedKmh[4], float fOutputKmh[4]) {
     fOutputKmh[0] = ClosedLoopControl_updatePIDControl(&gc->closedLoopFrontLeft, fSetpointKmh, fMeasuredSpeedKmh[0]);
     fOutputKmh[1] = ClosedLoopControl_updatePIDControl(&gc->closedLoopFrontRight, fSetpointKmh, fMeasuredSpeedKmh[1]);
     fOutputKmh[2] = ClosedLoopControl_updatePIDControl(&gc->closedLoopRearLeft, fSetpointKmh, fMeasuredSpeedKmh[2]);
     fOutputKmh[3] = ClosedLoopControl_updatePIDControl(&gc->closedLoopRearRight, fSetpointKmh, fMeasuredSpeedKmh[3]);
+
 }
 
 void GlobalControl_SerialDebug(GlobalControl* gc) {
