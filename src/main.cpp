@@ -3,10 +3,11 @@
 GlobalControl tGlobalControl;
 movementController_t tMovementController;
 MecanumOdometry_t robotOdometry;
+SerialCommConfig_t uartTransmitter;  // Type corrigé avec majuscule
 
-// Variables pour la communication de données UART
-SerialDataTransmitter_t uartTransmitter;
-HardwareSerial UartComm(PC11, PC10);  // UART3 pour transmission de données (nom différent)
+// Variables pour la communication de données UART  
+// HardwareSerial Uart4(PC10, PC11);  // UART4 : PC10=TX, PC11=RX (ordre corrigé)
+HardwareSerial UartSerial(PC10, PC11);
 
 
 void task_create(void){
@@ -17,7 +18,7 @@ void task_create(void){
   xTaskCreate(speedMesurementTask, "rotaryEncoderTask", 256, NULL, 1, NULL);
   xTaskCreate(commandProcessingTask, "commandProcessingTask", 256, NULL, 1, NULL);
   xTaskCreate(IMUTask,"IMUTask", 256, NULL, 1, NULL);
-  xTaskCreate(DataTransmissionTask,"DataTransmissionTask", 512, &uartTransmitter, 1, NULL);
+  xTaskCreate(UartTask,"UartTask", 256, NULL, 1, NULL);
 }
 
 void System_componentsInit(void){
@@ -25,7 +26,8 @@ void System_componentsInit(void){
   GlobalControl_init(&tGlobalControl);
   MovementController_init(&tMovementController);
   CommandProcessing_init();
-  BluetoothReception_init();
+  SerialDataTransmitter_init(&uartTransmitter, &UartSerial, 115200);  // Nom de variable corrigé
+
   PositionOrientation_init();
   Imu_init();
   
@@ -33,8 +35,9 @@ void System_componentsInit(void){
   float wheelRadius = wheelDiameter / 2.0f; // Utilise la constante du fichier encoderParameter.h
   MecanumOdometry_init(&robotOdometry, wheelRadius, 0.20f, 0.18f); // Ajustez les dimensions selon votre robot
   
-  // Initialisation du transmetteur UART avec configuration complète
-  SerialDataTransmitter_init(&uartTransmitter, &UartComm, 115200, 20, true); // 115200 bauds, 20Hz, checksum activé
+  // Initialisation simple de UART4 pour transmission
+  // Uart4.begin(9600);
+  // Serial.println("UART4 initialized at 115200 baud");
 }
 
 float fWheelSpeed[4] = {0, 0, 0, 0};
@@ -85,12 +88,13 @@ void loop()
 
 void displayInformationTask(void *pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t xFrequency = pdMS_TO_TICKS(200);
+  const TickType_t xFrequency = pdMS_TO_TICKS(1000);
   while (1) {
 
-    GlobalSpeed_debug();
+    // GlobalSpeed_debug();
     // Imu_SerialDebug();
-    MecanumOdometry_debug(&robotOdometry);
+    // MecanumOdometry_debug(&robotOdometry);
+    // BluetoothReception_debug();
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -130,7 +134,7 @@ void speedMesurementTask(void *pvParameters) {
 void commandProcessingTask(void *pvParameters) {
   while (1) {
 
-        fsetpointRpm = CommandProcessing_modifySetpointInRpm();
+        fsetpointRpm = 0;//CommandProcessing_modifySetpointInRpm();
 
     vTaskDelay(pdMS_TO_TICKS(50));
   }
@@ -148,57 +152,48 @@ void IMUTask(void *pvParameters) {
   }
 }
 
-void DataTransmissionTask(void *pvParameters) {
-  
+/* 
+ * UartTask - Tâche pour transmission des données via UART4
+ */
+void UartTask(void *pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t xFrequency = pdMS_TO_TICKS(100); // Conversion Hz -> ms
-  
-  Serial.println("DataTransmissionTask started");
+  const TickType_t xFrequency = pdMS_TO_TICKS(15000); // 1 Hz (toutes les 1000ms)
   
   while (1) {
-    // Préparation du paquet complet avec toutes les données
-    RobotCompleteDataPacket_t robotCompleteDataPacket_t = {}; // Initialisation à zéro
-    
-    // === DONNÉES MOTEURS ===
+    // Préparation du paquet de données
+    MotorDataPacket_t motorData = {};
     for (int i = 0; i < 4; i++) {
-      robotCompleteDataPacket_t.motorData.wheelSpeedRPM[i] = fWheelSpeed[i];
-      robotCompleteDataPacket_t.motorData.motorPower[i] = PIDoutput[i];
+      motorData.wheelSpeedRPM[i] = fWheelSpeed[i];
+      motorData.motorPower[i] = PIDoutput[i];
     }
-    // === DONNÉES ODOMÉTRIE ===
-    robotCompleteDataPacket_t.odometryData.positionX = robotOdometry.pose.x;
-    robotCompleteDataPacket_t.odometryData.positionY = robotOdometry.pose.y;
-    robotCompleteDataPacket_t.odometryData.orientation = robotOdometry.pose.theta;
-    robotCompleteDataPacket_t.odometryData.velocityX = robotOdometry.velocity.vx;
-    robotCompleteDataPacket_t.odometryData.velocityY = robotOdometry.velocity.vy;
-    robotCompleteDataPacket_t.odometryData.angularVelocity = robotOdometry.velocity.omega;
-    // === DONNÉES IMU ===
-    for (int i = 0; i < 3; i++) {
-      robotCompleteDataPacket_t.imuData.accel[i] = 0.0f;  // À remplacer par vos données IMU
-      robotCompleteDataPacket_t.imuData.gyro[i] = 0.0f;   // À remplacer par vos données IMU  
-      robotCompleteDataPacket_t.imuData.mag[i] = 0.0f;    // À remplacer par vos données IMU
-    }
-    robotCompleteDataPacket_t.imuData.roll = 0.0f;   // À remplacer par vos données IMU
-    robotCompleteDataPacket_t.imuData.pitch = 0.0f;  // À remplacer par vos données IMU
-    robotCompleteDataPacket_t.imuData.yaw = 0.0f;    // À remplacer par vos données IMU
+
+    // DataPacket_t completeData = {};
     
-    // === MÉTADONNÉES DU PAQUET ===
-    robotCompleteDataPacket_t.timestamp = millis();
-    robotCompleteDataPacket_t.packetId = robotCompleteDataPacket_t.packetId++;
+    // // Remplissage avec des données de test
+    // for (int i = 0; i < 4; i++) {
+    //   completeData.motorData.wheelSpeedRPM[i] = fWheelSpeed[i];
+    //   completeData.motorData.motorPower[i] = PIDoutput[i];
+    // }
     
-    // === TRANSMISSION ===
-    bool bsendSuccess =SerialDataTransmitter_sendCompleteData(&uartTransmitter, &robotCompleteDataPacket_t);
-    if (bsendSuccess = true) {
-      // Transmission réussie - debug optionnel
-      static uint16_t debugCounter = 0;
-      if (++debugCounter % 100 == 0) { // Affichage tous les 100 paquets (5 secondes à 20Hz)
-        Serial.print("Transmitted packet #"); Serial.println(robotCompleteDataPacket_t.packetId);
-      }
-    } 
-    else {
-      Serial.println("Error: Failed to transmit data packet");
-    }
+    // completeData.odometryData.positionX = robotOdometry.pose.x;
+    // completeData.odometryData.positionY = robotOdometry.pose.y;
+    // completeData.odometryData.orientation = robotOdometry.pose.theta;
+
+    // for (int i = 0; i < 3; i++) {
+    //   completeData.imuData.accel[i]=0;
+    //   completeData.imuData.gyro[i]=0;
+    //   completeData.imuData.mag[i]=0;
+    // }
+    // completeData.imuData.roll=0;
+    // completeData.imuData.pitch=0;
+    // completeData.imuData.yaw =0;
+    
+    // Transmission via notre transmetteur
+    SerialDataTransmitter_sendCompleteData(&uartTransmitter, &motorData);
+
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
+
 
  

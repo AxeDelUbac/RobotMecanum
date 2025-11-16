@@ -15,3 +15,8 @@ char BluetoothReception_retreiveData(void) {
     }
     return -1; // Indicate no data was received
 }
+
+void BluetoothReception_debug(void) {
+    BluetoothSerial.println("blue");
+    Serial.println("Test Bluetooth Reception");
+}

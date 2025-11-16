@@ -22,5 +22,6 @@ void speedMesurementTask(void *pvParameters);
 void commandProcessingTask(void *pvParameters);
 void IMUTask(void *pvParameters);
 void DataTransmissionTask(void *pvParameters);
+void UartTask(void *pvParameters);
 
 void task_create(void);
