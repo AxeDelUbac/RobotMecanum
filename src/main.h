@@ -15,6 +15,7 @@
 #include "commandProcessing/bluetoothReception.h"
 #include "navigation/mecanumOdometrie.h"
 #include "DataCommunication/SerialDataTransmitter.h"
+#include "DataCommunication/SerialDataReceiver.h"
 
 void displayInformationTask(void *pvParameters);
 void MotorRegulationTask(void *pvParameters);

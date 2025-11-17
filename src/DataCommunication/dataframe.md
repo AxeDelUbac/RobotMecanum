@@ -35,3 +35,13 @@
 ├─────────────────────────┼───────────────────┼───────────────────┤
 │ TOTAL DataPacket_t      │      92 octets    │                   │
 └─────────────────────────┴───────────────────┴───────────────────┘
+
+
+# Data Reçu correspondant à
+AA 03 01 80 80 06 0A
+
+AA start byte
+03 useful datalength
+01 datatype
+80 80 06 Direction x and Y, gearbox ratio
+0A Checksum

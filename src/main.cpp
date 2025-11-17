@@ -3,6 +3,9 @@
 GlobalControl tGlobalControl;
 movementController_t tMovementController;
 MecanumOdometry_t robotOdometry;
+
+MonitoringPacket_t lastMonitoringPacket;
+
 SerialCommConfig_t uartTransmitter;  // Type corrigé avec majuscule
 
 // Variables pour la communication de données UART  
@@ -27,7 +30,7 @@ void System_componentsInit(void){
   MovementController_init(&tMovementController);
   CommandProcessing_init();
   SerialDataTransmitter_init(&uartTransmitter, &UartSerial, 115200);  // Nom de variable corrigé
-
+  SerialDataReceiver_init(&UartSerial);
   PositionOrientation_init();
   Imu_init();
   
@@ -72,7 +75,7 @@ void setup() {
   }
 
   System_componentsInit();
-
+        // (handler utilisateur retiré — le récepteur affiche la trame complète en debug par défaut)
   createIT();
 
   task_create();
@@ -188,12 +191,12 @@ void UartTask(void *pvParameters) {
     // completeData.imuData.pitch=0;
     // completeData.imuData.yaw =0;
     
-    // Transmission via notre transmetteur
-    SerialDataTransmitter_sendCompleteData(&uartTransmitter, &motorData);
+
+  // Transmission via notre transmetteur
+  SerialDataTransmitter_sendCompleteData(&uartTransmitter, &motorData);
+
+  SerialDataReceiver_process(&UartSerial, &lastMonitoringPacket);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
-
-
- 

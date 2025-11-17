@@ -30,11 +30,6 @@ void MecanumOdometry_init(MecanumOdometry_t* odometry, float wheelRadius, float 
     MecanumOdometry_reset(odometry);
     
     odometry->initialized = true;
-    
-    Serial.println("Mecanum Odometry initialized");
-    Serial.print("Wheel radius: "); Serial.println(wheelRadius, 4);
-    Serial.print("Wheel base: "); Serial.println(wheelBase, 4);
-    Serial.print("Track width: "); Serial.println(trackWidth, 4);
 }
 
 /**
@@ -59,7 +54,6 @@ void MecanumOdometry_reset(MecanumOdometry_t* odometry)
     // Reset du timestamp
     odometry->lastUpdateTime = millis();
     
-    Serial.println("Odometry reset to origin");
 }
 
 /**
