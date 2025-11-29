@@ -33,9 +33,12 @@ typedef struct {
 } ImuDataPacket_t;
 
 typedef struct {
-    uint8_t dirX;
-    uint8_t dirY;
-    uint8_t speedRatio;
+    int8_t dirX;
+    int8_t dirY;
+    int8_t omega;
+    uint8_t speedRatio;  // Octet supplémentaire 1
+    uint8_t reserved2;  // Octet supplémentaire 2  
+    uint8_t reserved3;  // Octet supplémentaire 3
 } MonitoringPacket_t;
 
 // Structure unifiée pour toutes les données du robot (PAQUET COMPLET)
@@ -57,6 +60,7 @@ typedef struct {
 // Énumération des types de paquets
 typedef enum {
     PACKET_TYPE_COMPLETE_DATA = 0x04,    // Type pour paquet complet
+    PACKET_TYPE_MONITORING = 0x10,       // Type pour paquet monitoring
 } PacketType_t;
 
 #endif // SERIAL_DATA_STRUCTURE_H

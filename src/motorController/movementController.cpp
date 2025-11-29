@@ -10,48 +10,30 @@ void MovementController_init(movementController_t* mc){
     for (int i=0;i<4;i++) mc->fTabSpeedInPwm[i]=0.0f;
 }
 
-void MovementController_setDirection(movementController_t* mc, int Xaxis, int Yaxis, int iSpeed) {
-    if (!mc) return;
-    if (Xaxis == 0 && Yaxis == 1) { // Avant
-    MotorGearBox_setMotorDirectionPWM(&mc->orightFrontMotor, 1, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftFrontMotor, 1, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->orightBackMotor, 1, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftBackMotor, 1, iSpeed);
-    } else if (Xaxis == 0 && Yaxis == -1) { // Arrière
-    MotorGearBox_setMotorDirectionPWM(&mc->orightFrontMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftFrontMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->orightBackMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftBackMotor, 0, iSpeed);
-    } else if (Xaxis == 1 && Yaxis == 0) { // Droite
-    MotorGearBox_setMotorDirectionPWM(&mc->orightFrontMotor, 1, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftFrontMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->orightBackMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftBackMotor, 1, iSpeed);
-    } else if (Xaxis == -1 && Yaxis == 0) { // Gauche
-    MotorGearBox_setMotorDirectionPWM(&mc->orightFrontMotor, 1, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftFrontMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->orightBackMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftBackMotor, 1, iSpeed);
-    }
-}
-
-void MovementController_setRotation(movementController_t* mc, int iSpeed){
+void MovementController_setMovement(movementController_t* mc, float fMotorSpeeds[4]) {
     if (!mc) return;
 
-    int Xaxis = 1; // keep previous semantics unclear in original; default rotate right
-    int Yaxis = 1;
+    // Definis la direction et la vitesse des moteurs
+    for(int i=0; i<4; i++)
+    {
+      mc->fTabSpeedInPercent[i]=fMotorSpeeds[i];
+      if (fMotorSpeeds[i]>0)
+      {
+        mc->bTabDirection[i]=true;
+      }
+      else
+      {
+        mc->bTabDirection[i]=false;
+      }
 
-    if (Xaxis == 1 && Yaxis == 1) { // Rotation droite
-    MotorGearBox_setMotorDirectionPWM(&mc->orightFrontMotor, 1, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftFrontMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->orightBackMotor, 1, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftBackMotor, 0, iSpeed);
-    } else if (Xaxis == -1 && Yaxis == -1) { // Rotation gauche
-    MotorGearBox_setMotorDirectionPWM(&mc->orightFrontMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftFrontMotor, 1, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->orightBackMotor, 0, iSpeed);
-    MotorGearBox_setMotorDirectionPWM(&mc->oleftBackMotor, 1, iSpeed);
+      //normalisation de la vitesse en pourentage 0-100 vers pwm 0-255
+      mc->fTabSpeedInPwm[i] = mc->fTabSpeedInPercent[i] * 255 / 100;
     }
+
+    MotorGearBox_setMotorDirectionPWM(&mc->oleftFrontMotor, mc->bTabDirection[0], mc->fTabSpeedInPwm[0]);
+    MotorGearBox_setMotorDirectionPWM(&mc->orightFrontMotor, mc->bTabDirection[1], mc->fTabSpeedInPwm[1]);
+    MotorGearBox_setMotorDirectionPWM(&mc->oleftBackMotor, mc->bTabDirection[2], mc->fTabSpeedInPwm[2]);
+    MotorGearBox_setMotorDirectionPWM(&mc->orightBackMotor, mc->bTabDirection[3], mc->fTabSpeedInPwm[3]);
 }
 
 void MovementController_movementFront(movementController_t* mc){

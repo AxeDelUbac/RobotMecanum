@@ -19,16 +19,15 @@ void task_create(void){
   xTaskCreate(displayInformationTask, "displayInformationTask", 256, NULL, 1, NULL);
   xTaskCreate(MotorRegulationTask, "MotorRegulationTask", 512, NULL, 2, NULL);
   xTaskCreate(speedMesurementTask, "rotaryEncoderTask", 256, NULL, 1, NULL);
-  xTaskCreate(commandProcessingTask, "commandProcessingTask", 256, NULL, 1, NULL);
   xTaskCreate(IMUTask,"IMUTask", 256, NULL, 1, NULL);
-  xTaskCreate(UartTask,"UartTask", 256, NULL, 1, NULL);
+  xTaskCreate(UartTransmitTask,"UartTransmitTask", 256, NULL, 1, NULL);
+  xTaskCreate(UartReceiveTask,"UartReceiveTask", 256, NULL, 1, NULL);
 }
 
 void System_componentsInit(void){
   GPIO_init();
   GlobalControl_init(&tGlobalControl);
   MovementController_init(&tMovementController);
-  CommandProcessing_init();
   SerialDataTransmitter_init(&uartTransmitter, &UartSerial, 115200);  // Nom de variable corrigé
   SerialDataReceiver_init(&UartSerial);
   PositionOrientation_init();
@@ -75,7 +74,7 @@ void setup() {
   }
 
   System_componentsInit();
-        // (handler utilisateur retiré — le récepteur affiche la trame complète en debug par défaut)
+  // (handler utilisateur retiré — le récepteur affiche la trame complète en debug par défaut)
   createIT();
 
   task_create();
@@ -97,7 +96,13 @@ void displayInformationTask(void *pvParameters) {
     // GlobalSpeed_debug();
     // Imu_SerialDebug();
     // MecanumOdometry_debug(&robotOdometry);
-    // BluetoothReception_debug();
+
+    // Serial.print("Paquets reçus: ");
+    // Serial.print(lastMonitoringPacket.dirX);
+    // Serial.print(", ");
+    // Serial.print(lastMonitoringPacket.dirY);
+    // Serial.print(", ");
+    // Serial.println(lastMonitoringPacket.speedRatio);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -108,10 +113,17 @@ void MotorRegulationTask(void *pvParameters) {
   const TickType_t xFrequency = pdMS_TO_TICKS(50); // 20Hz pour asservissement + odométrie
   
   while (1) {
+    float fNormalisedWheelSpeed[4] = {0, 0, 0, 0};
+
+    // === CINEMATIQUE DIRECTE ===
+    ForwardKinematics_computeWheelVelocities(lastMonitoringPacket.dirX, lastMonitoringPacket.dirY, lastMonitoringPacket.omega, fWheelSpeed);
+    ForwardKinematics_normalizeMotorsSpeeds(fWheelSpeed, fNormalisedWheelSpeed, 100.0f);
+
     // === ASSERVISSEMENT MOTEUR ===
-    GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, fWheelSpeed, PIDoutput);
+    // GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, fWheelSpeed, PIDoutput);
     MovementController_setMotorSpeedInPWM(&tMovementController, PIDoutput);
-    MovementController_movementFront(&tMovementController);
+
+    MovementController_setMovement(&tMovementController, fNormalisedWheelSpeed);
 
     // === MISE À JOUR ODOMÉTRIE ===
     // Utilise les vitesses mesurées par les encodeurs pour calculer la position
@@ -134,15 +146,6 @@ void speedMesurementTask(void *pvParameters) {
   }
 }
 
-void commandProcessingTask(void *pvParameters) {
-  while (1) {
-
-        fsetpointRpm = 0;//CommandProcessing_modifySetpointInRpm();
-
-    vTaskDelay(pdMS_TO_TICKS(50));
-  }
-}
-
 void IMUTask(void *pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t xFrequency = pdMS_TO_TICKS(250);
@@ -158,44 +161,37 @@ void IMUTask(void *pvParameters) {
 /* 
  * UartTask - Tâche pour transmission des données via UART4
  */
-void UartTask(void *pvParameters) {
+void UartTransmitTask(void *pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t xFrequency = pdMS_TO_TICKS(15000); // 1 Hz (toutes les 1000ms)
+  const TickType_t xFrequency = pdMS_TO_TICKS(7500); // 1 Hz (toutes les 1000ms)
   
   while (1) {
-    // Préparation du paquet de données
+    
+    // Préparation du paquet de données moteur
     MotorDataPacket_t motorData = {};
     for (int i = 0; i < 4; i++) {
       motorData.wheelSpeedRPM[i] = fWheelSpeed[i];
       motorData.motorPower[i] = PIDoutput[i];
     }
 
-    // DataPacket_t completeData = {};
-    
-    // // Remplissage avec des données de test
-    // for (int i = 0; i < 4; i++) {
-    //   completeData.motorData.wheelSpeedRPM[i] = fWheelSpeed[i];
-    //   completeData.motorData.motorPower[i] = PIDoutput[i];
-    // }
-    
-    // completeData.odometryData.positionX = robotOdometry.pose.x;
-    // completeData.odometryData.positionY = robotOdometry.pose.y;
-    // completeData.odometryData.orientation = robotOdometry.pose.theta;
+    // Transmission via notre transmetteur
+    SerialDataTransmitter_sendCompleteData(&uartTransmitter, &motorData);
 
-    // for (int i = 0; i < 3; i++) {
-    //   completeData.imuData.accel[i]=0;
-    //   completeData.imuData.gyro[i]=0;
-    //   completeData.imuData.mag[i]=0;
-    // }
-    // completeData.imuData.roll=0;
-    // completeData.imuData.pitch=0;
-    // completeData.imuData.yaw =0;
-    
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+  }
+}
 
-  // Transmission via notre transmetteur
-  SerialDataTransmitter_sendCompleteData(&uartTransmitter, &motorData);
-
-  SerialDataReceiver_process(&UartSerial, &lastMonitoringPacket);
+/* 
+ * UartRxTask - Tâche pour réception des données via UART
+ */
+void UartReceiveTask(void *pvParameters) {
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(50); // Vérification toutes les 50ms
+  
+  uint32_t statsCounter = 0;
+  
+  while (1) {
+    SerialDataReceiver_process(&UartSerial, &lastMonitoringPacket);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }

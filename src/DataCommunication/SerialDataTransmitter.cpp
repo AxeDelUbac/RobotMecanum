@@ -1,4 +1,17 @@
 #include "SerialDataTransmitter.h"
+// debug serial
+static HardwareSerial* s_debugSerial = NULL;
+static bool s_debugEnabled = false;
+
+void SerialDataTransmitter_setDebugSerial(HardwareSerial* debugSerial)
+{
+    s_debugSerial = debugSerial;
+}
+
+void SerialDataTransmitter_enableDebug(bool enable)
+{
+    s_debugEnabled = enable;
+}
 /**
  * @brief Initialise le système de transmission série avec configuration complète
  * @param transmitter Pointeur vers la structure du transmetteur
@@ -39,10 +52,78 @@ bool SerialDataTransmitter_sendCompleteData(SerialCommConfig_t* config, MotorDat
     packet.checksum = 0xfc;
     // packet.checksum = SerialDataTransmitter_calculateChecksum((uint8_t*)&packet.data, sizeof(DataPacket_t));
     
-    // Transmission du paquet complet en binaire
-    size_t bytesWritten = serial->write((uint8_t*)&packet, sizeof(MotorDataPacket_t));
+    // Construire un buffer propre avec header + payload + checksum
+    uint8_t txBuffer[256];
+    size_t bufIdx = 0;
     
-    return (bytesWritten == sizeof(MotorDataPacket_t));
+    // Header
+    txBuffer[bufIdx++] = packet.startByte;          // 0xAA
+    txBuffer[bufIdx++] = packet.dataLength;         // taille payload
+    txBuffer[bufIdx++] = packet.packetType;         // type
+    
+    // Payload (MotorDataPacket_t)
+    memcpy(&txBuffer[bufIdx], motorData, sizeof(MotorDataPacket_t));
+    bufIdx += sizeof(MotorDataPacket_t);
+    
+    // Checksum simple
+    txBuffer[bufIdx++] = packet.checksum;
+    
+    // debug: afficher la trame envoyée si demandé
+    if (s_debugEnabled && s_debugSerial) {
+        s_debugSerial->print("TX:");
+        for (size_t i = 0; i < bufIdx; ++i) {
+            s_debugSerial->print(' ');
+            if (txBuffer[i] < 16) s_debugSerial->print('0');
+            s_debugSerial->print(txBuffer[i], HEX);
+        }
+        s_debugSerial->println();
+    }
+
+    // Transmission du buffer construit
+    size_t bytesWritten = serial->write(txBuffer, bufIdx);
+
+    return (bytesWritten == bufIdx);
+}
+
+/**
+ * @brief Transmet un petit paquet de monitoring (dirX, dirY, speedRatio)
+ * @param config Configuration de transmission
+ * @param monitoringData Données de monitoring à envoyer
+ * @return true si la transmission a réussi, false sinon
+ */
+bool SerialDataTransmitter_sendMonitoringPacket(SerialCommConfig_t* config, MonitoringPacket_t* monitoringData)
+{
+    HardwareSerial* serial = config->serialPort;
+    
+    // Construire un buffer propre avec header + payload + checksum
+    uint8_t txBuffer[256];
+    size_t bufIdx = 0;
+    
+    // Header
+    txBuffer[bufIdx++] = 0xAA;                      // Start byte
+    txBuffer[bufIdx++] = sizeof(MonitoringPacket_t); // 3 octets
+    txBuffer[bufIdx++] = PACKET_TYPE_MONITORING;    // Type 0x10
+    
+    // Payload (MonitoringPacket_t)
+    memcpy(&txBuffer[bufIdx], monitoringData, sizeof(MonitoringPacket_t));
+    bufIdx += sizeof(MonitoringPacket_t);
+    
+    // Checksum simple
+    txBuffer[bufIdx++] = 0xFC;
+    
+    // debug: afficher la trame envoyée
+    Serial.print("TX:");
+    for (size_t i = 0; i < bufIdx; ++i) {
+        Serial.print(' ');
+        if (txBuffer[i] < 16) Serial.print('0');
+        Serial.print(txBuffer[i], HEX);
+    }
+    Serial.println();
+
+    // Transmission du buffer construit
+    size_t bytesWritten = serial->write(txBuffer, bufIdx);
+
+    return (bytesWritten == bufIdx);
 }
 
 /**

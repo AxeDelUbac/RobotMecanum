@@ -12,14 +12,15 @@ typedef struct {
     motorGearBox_t orightFrontMotor;
     motorGearBox_t oleftFrontMotor;
     float fTabSpeedInPwm[4];
+    float fTabSpeedInPercent[4];
+    bool bTabDirection[4];
 } movementController_t;
 
 // Lifecycle
 void MovementController_init(movementController_t* mc);
 
 // Actions
-void MovementController_setDirection(movementController_t* mc, int Xaxis, int Yaxis, int iSpeed);
-void MovementController_setRotation(movementController_t* mc, int iSpeed);
+void MovementController_setMovement(movementController_t* mc, float fMotorSpeeds[4]);
 
 void MovementController_movementFront(movementController_t* mc);
 void MovementController_movementBack(movementController_t* mc);

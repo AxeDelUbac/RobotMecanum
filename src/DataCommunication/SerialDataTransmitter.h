@@ -17,6 +17,7 @@ void SerialDataTransmitter_init(SerialCommConfig_t* config, HardwareSerial* seri
 
 // Fonctions de transmission
 bool SerialDataTransmitter_sendCompleteData(SerialCommConfig_t* config,MotorDataPacket_t* motorData);
+bool SerialDataTransmitter_sendMonitoringPacket(SerialCommConfig_t* config, MonitoringPacket_t* monitoringData);
 
 // Fonctions utilitaires
 uint8_t SerialDataTransmitter_calculateChecksum(const uint8_t* data, size_t length);
