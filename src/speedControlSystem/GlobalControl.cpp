@@ -12,12 +12,11 @@ void GlobalControl_init(GlobalControl* gc) {
 
 int iloop = 50;
 
-void GlobalControl_UpdateSetpoint(GlobalControl* gc, float fSetpointKmh, float fMeasuredSpeedKmh[4], float fOutputKmh[4]) {
-    fOutputKmh[0] = ClosedLoopControl_updatePIDControl(&gc->closedLoopFrontLeft, fSetpointKmh, fMeasuredSpeedKmh[0]);
-    fOutputKmh[1] = ClosedLoopControl_updatePIDControl(&gc->closedLoopFrontRight, fSetpointKmh, fMeasuredSpeedKmh[1]);
-    fOutputKmh[2] = ClosedLoopControl_updatePIDControl(&gc->closedLoopRearLeft, fSetpointKmh, fMeasuredSpeedKmh[2]);
-    fOutputKmh[3] = ClosedLoopControl_updatePIDControl(&gc->closedLoopRearRight, fSetpointKmh, fMeasuredSpeedKmh[3]);
-
+void GlobalControl_UpdateSetpoint(GlobalControl* gc, float fSetpointKmh[4], float fMeasuredSpeedKmh[4], float fOutputKmh[4]) {
+    fOutputKmh[0] = ClosedLoopControl_updatePIDControl(&gc->closedLoopFrontLeft, fSetpointKmh[0], fMeasuredSpeedKmh[0]);
+    fOutputKmh[1] = ClosedLoopControl_updatePIDControl(&gc->closedLoopFrontRight, fSetpointKmh[1], fMeasuredSpeedKmh[1]);
+    fOutputKmh[2] = ClosedLoopControl_updatePIDControl(&gc->closedLoopRearLeft, fSetpointKmh[2], fMeasuredSpeedKmh[2]);
+    fOutputKmh[3] = ClosedLoopControl_updatePIDControl(&gc->closedLoopRearRight, fSetpointKmh[3], fMeasuredSpeedKmh[3]);
 }
 
 void GlobalControl_SerialDebug(GlobalControl* gc) {

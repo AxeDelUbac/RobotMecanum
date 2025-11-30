@@ -129,14 +129,6 @@ void MecanumOdometry_updateKinematics(MecanumOdometry_t* odometry, float wheelVe
     
     // Matrice de cinématique directe pour roues mécanum (coefficients sans unités)
     // Ordre des roues: [FL, FR, RL, RR]
-    static const int8_t kinematics_matrix[3][4] = {
-        // vx:  [ 1,  1,  1,  1] 
-        { 1,  1,  1,  1},
-        // vy:  [-1,  1,  1, -1]  
-        {-1,  1,  1, -1},
-        // ω:   [-1,  1, -1,  1]
-        {-1,  1, -1,  1}
-    };
     
     // Calcul matriciel optimisé avec facteurs d'échelle
     // Mise à jour directe des vitesses dans la structure

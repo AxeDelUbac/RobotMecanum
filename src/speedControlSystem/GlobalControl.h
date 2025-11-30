@@ -12,7 +12,7 @@ typedef struct {
 } GlobalControl;
 
 void GlobalControl_init(GlobalControl* gc);
-void GlobalControl_UpdateSetpoint(GlobalControl* gc, float fSetpointKmh, float fMeasuredSpeedKmh[4], float fOutputKmh[4]);
+void GlobalControl_UpdateSetpoint(GlobalControl* gc, float fSetpointKmh[4], float fMeasuredSpeedKmh[4], float fOutputKmh[4]);
 void GlobalControl_SerialDebug(GlobalControl* gc);
 
 #endif

@@ -3,6 +3,7 @@
 GlobalControl tGlobalControl;
 movementController_t tMovementController;
 MecanumOdometry_t robotOdometry;
+forwardKinematics_t forwardKinematics;
 
 MonitoringPacket_t lastMonitoringPacket;
 
@@ -12,16 +13,31 @@ SerialCommConfig_t uartTransmitter;  // Type corrigé avec majuscule
 // HardwareSerial Uart4(PC10, PC11);  // UART4 : PC10=TX, PC11=RX (ordre corrigé)
 HardwareSerial UartSerial(PC10, PC11);
 
+// Variable globale pour le handle de la tâche
+TaskHandle_t xUartReceiveTaskHandle = NULL;
+// Callback d'interruption UART
+void onUartDataReceived() {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    
+    // Notifie la tâche qu'il y a des données
+    vTaskNotifyGiveFromISR(xUartReceiveTaskHandle, &xHigherPriorityTaskWoken);
+    
+    // Force un changement de contexte si nécessaire
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
 
 void task_create(void){
   Serial.println("Init FreeRTOS Task...");
 
+  //Periodic tasks
   xTaskCreate(displayInformationTask, "displayInformationTask", 256, NULL, 1, NULL);
   xTaskCreate(MotorRegulationTask, "MotorRegulationTask", 512, NULL, 2, NULL);
   xTaskCreate(speedMesurementTask, "rotaryEncoderTask", 256, NULL, 1, NULL);
   xTaskCreate(IMUTask,"IMUTask", 256, NULL, 1, NULL);
   xTaskCreate(UartTransmitTask,"UartTransmitTask", 256, NULL, 1, NULL);
-  xTaskCreate(UartReceiveTask,"UartReceiveTask", 256, NULL, 1, NULL);
+
+  // Asynchronous task
+  xTaskCreate(UartReceiveTask,"UartReceiveTask", 256, NULL, 1, &xUartReceiveTaskHandle);
 }
 
 void System_componentsInit(void){
@@ -42,36 +58,36 @@ void System_componentsInit(void){
   // Serial.println("UART4 initialized at 115200 baud");
 }
 
-float fWheelSpeed[4] = {0, 0, 0, 0};
+float fMesuredWheelSpeed[4] = {0, 0, 0, 0};
 float PIDoutput[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-float fsetpointRpm = 0;
+float fsetpointRpm[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
 HardwareSerial Serial2(PD6, PD5);
 
 void setup() {
 
   Serial.begin(115200);
-  Serial.println();
-  Serial.println("Scan I2C1 démarré...");
-  // Si besoin, préciser les pins : Wire1.begin(SDA_pin, SCL_pin);
-  Wire.begin(); // initialise I2C1 avec les paramètres par défaut
+  // Serial.println();
+  // Serial.println("Scan I2C1 démarré...");
+  // // Si besoin, préciser les pins : Wire1.begin(SDA_pin, SCL_pin);
+  // Wire.begin(); // initialise I2C1 avec les paramètres par défaut
 
-  int nDevices = 0;
-  for (uint8_t address = 1; address < 127; ++address) {
-    Wire.beginTransmission(address);
-    uint8_t error = Wire.endTransmission();
-    if (error == 0) {
-      Serial.print("Device trouvé à 0x");
-      if (address < 16) Serial.print("0");
-      Serial.print(address, HEX);
-      Serial.print("  (");
-      Serial.print(address);
-      Serial.println(")");
-      nDevices++;
-    }
-    // petit délai pour stabilité si nécessaire
-    delay(2);
-  }
+  // int nDevices = 0;
+  // for (uint8_t address = 1; address < 127; ++address) {
+  //   Wire.beginTransmission(address);
+  //   uint8_t error = Wire.endTransmission();
+  //   if (error == 0) {
+  //     Serial.print("Device trouvé à 0x");
+  //     if (address < 16) Serial.print("0");
+  //     Serial.print(address, HEX);
+  //     Serial.print("  (");
+  //     Serial.print(address);
+  //     Serial.println(")");
+  //     nDevices++;
+  //   }
+  //   // petit délai pour stabilité si nécessaire
+  //   delay(2);
+  // }
 
   System_componentsInit();
   // (handler utilisateur retiré — le récepteur affiche la trame complète en debug par défaut)
@@ -96,13 +112,7 @@ void displayInformationTask(void *pvParameters) {
     // GlobalSpeed_debug();
     // Imu_SerialDebug();
     // MecanumOdometry_debug(&robotOdometry);
-
-    // Serial.print("Paquets reçus: ");
-    // Serial.print(lastMonitoringPacket.dirX);
-    // Serial.print(", ");
-    // Serial.print(lastMonitoringPacket.dirY);
-    // Serial.print(", ");
-    // Serial.println(lastMonitoringPacket.speedRatio);
+    //ForwardKinematics_debug(&forwardKinematics);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -116,18 +126,23 @@ void MotorRegulationTask(void *pvParameters) {
     float fNormalisedWheelSpeed[4] = {0, 0, 0, 0};
 
     // === CINEMATIQUE DIRECTE ===
-    ForwardKinematics_computeWheelVelocities(lastMonitoringPacket.dirX, lastMonitoringPacket.dirY, lastMonitoringPacket.omega, fWheelSpeed);
-    ForwardKinematics_normalizeMotorsSpeeds(fWheelSpeed, fNormalisedWheelSpeed, 100.0f);
+    forwardKinematics.vx = lastMonitoringPacket.dirX;
+    forwardKinematics.vy = lastMonitoringPacket.dirY;
+    forwardKinematics.omega = lastMonitoringPacket.omega;
+    ForwardKinematics_computeWheelVelocities(&forwardKinematics, fNormalisedWheelSpeed);
 
     // === ASSERVISSEMENT MOTEUR ===
-    // GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, fWheelSpeed, PIDoutput);
-    MovementController_setMotorSpeedInPWM(&tMovementController, PIDoutput);
+    // for(int i=0; i<4; i++){
+    //   fsetpointRpm[i] = fNormalisedWheelSpeed[i];
+    // }
+    // GlobalControl_UpdateSetpoint(&tGlobalControl, fsetpointRpm, fMesuredWheelSpeed, PIDoutput);
 
+    // === CONTROLE MOTEUR ===
     MovementController_setMovement(&tMovementController, fNormalisedWheelSpeed);
 
     // === MISE À JOUR ODOMÉTRIE ===
     // Utilise les vitesses mesurées par les encodeurs pour calculer la position
-    MecanumOdometry_updateWheelSpeeds(&robotOdometry, fWheelSpeed);
+    MecanumOdometry_updateWheelSpeeds(&robotOdometry, fMesuredWheelSpeed);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -140,7 +155,7 @@ void speedMesurementTask(void *pvParameters) {
   const TickType_t xFrequency = pdMS_TO_TICKS(fSpeedMesurementPeriodMs);
   while (1) {
 
-    GlobalSpeed_getMeanSpeedInRPM(fWheelSpeed, fSpeedMesurementPeriodMs);
+    GlobalSpeed_getMeanSpeedInRPM(fMesuredWheelSpeed, fSpeedMesurementPeriodMs);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -158,9 +173,6 @@ void IMUTask(void *pvParameters) {
   }
 }
 
-/* 
- * UartTask - Tâche pour transmission des données via UART4
- */
 void UartTransmitTask(void *pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t xFrequency = pdMS_TO_TICKS(7500); // 1 Hz (toutes les 1000ms)
@@ -170,7 +182,7 @@ void UartTransmitTask(void *pvParameters) {
     // Préparation du paquet de données moteur
     MotorDataPacket_t motorData = {};
     for (int i = 0; i < 4; i++) {
-      motorData.wheelSpeedRPM[i] = fWheelSpeed[i];
+      motorData.wheelSpeedRPM[i] = fMesuredWheelSpeed[i];
       motorData.motorPower[i] = PIDoutput[i];
     }
 
@@ -181,18 +193,29 @@ void UartTransmitTask(void *pvParameters) {
   }
 }
 
-/* 
- * UartRxTask - Tâche pour réception des données via UART
- */
-void UartReceiveTask(void *pvParameters) {
-  TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t xFrequency = pdMS_TO_TICKS(50); // Vérification toutes les 50ms
+// void UartReceiveTask(void *pvParameters) {
+//   TickType_t xLastWakeTime = xTaskGetTickCount();
+//   const TickType_t xFrequency = pdMS_TO_TICKS(50); // Vérification toutes les 50ms
   
-  uint32_t statsCounter = 0;
+//   uint32_t statsCounter = 0;
   
-  while (1) {
-    SerialDataReceiver_process(&UartSerial, &lastMonitoringPacket);
+//   while (1) {
+//     SerialDataReceiver_process(&UartSerial, &lastMonitoringPacket);
 
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
-  }
+//     vTaskDelayUntil(&xLastWakeTime, xFrequency);
+//   }
+// }
+
+void UartReceiveTask(void *pvParameters) {
+    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(1000); // Timeout de sécurité
+    
+    while (1) {
+        // Attend une notification (données reçues) ou timeout
+        if (ulTaskNotifyTake(pdTRUE, xMaxBlockTime) > 0) {
+            // Des données sont arrivées ! Traitement immédiat
+            SerialDataReceiver_process(&UartSerial, &lastMonitoringPacket);
+        } else {
+            //Serial.println("UART: Pas de données depuis 1s");
+        }
+    }
 }
